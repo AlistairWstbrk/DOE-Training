@@ -158,13 +158,13 @@ const fragmentShaderSource = `#version 300 es\nprecision highp float; in vec4 vC
 let defaultViewMatrix = [0.73, 0.13, -0.67, 0, 0.1, 0.95, 0.29, 0, 0.67, -0.28, 0.68, 0, -0.02, 0.29, 2.22, 1];
 let viewMatrix = defaultViewMatrix;
 
-// --- TOUR HELPER FUNCTIONS ---
+// Updated helper: Negates coordinates so WebGL inversion resolves to +X, +Y, +Z in world space
 function posToMatrix(x, y, z) {
     return [
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        x, y, z, 1
+        1,  0,  0, 0,
+        0,  1,  0, 0,
+        0,  0,  1, 0,
+       -x, -y, -z, 1
     ];
 }
 
