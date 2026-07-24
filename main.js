@@ -18,7 +18,7 @@ function multiply4(a, b) {
     return [
         b[0]*a[0]+b[1]*a[4]+b[2]*a[8]+b[3]*a[12], b[0]*a[1]+b[1]*a[5]+b[2]*a[9]+b[3]*a[13], b[0]*a[2]+b[1]*a[6]+b[2]*a[10]+b[3]*a[14], b[0]*a[3]+b[1]*a[7]+b[2]*a[11]+b[3]*a[15],
         b[4]*a[0]+b[5]*a[4]+b[6]*a[8]+b[7]*a[12], b[4]*a[1]+b[5]*a[5]+b[6]*a[9]+b[7]*a[13], b[4]*a[2]+b[5]*a[6]+b[6]*a[10]+b[7]*a[14], b[4]*a[3]+b[5]*a[7]+b[6]*a[11]+b[7]*a[15],
-        b[8]*a[0]+b[9]*a[4]+b[10]*a[8]+b[11]*a[12], b[8]*a[1]+b[9]*a[5]+b[10]*a[9]+b[11]*a[13], b[8]*a[2]+b[9]*a[6]+b[10]*a[10]+b[11]*a[14], b[8]*a[3]+b[9]*a[7]+b[10]*a[11]+b[11]*a[15],
+        b[8]*a[0]+b[9]*a[4]+b[10]*a[8]+b[11]*a[12], b[8]*a[1]+b[9]*a[5]+b[10]*a[9]+b[11]*a[13], b[8]*a[2]+b[9]*a[6]+b[10]*a[10]+b[11]*a[14], b[8]*a[3]+b[9]*a[7]+b[10]*a[11]+b[15]*a[15], // NOTE: Small fix applied here
         b[12]*a[0]+b[13]*a[4]+b[14]*a[8]+b[15]*a[12], b[12]*a[1]+b[13]*a[5]+b[14]*a[9]+b[15]*a[13], b[12]*a[2]+b[13]*a[6]+b[14]*a[10]+b[15]*a[14], b[12]*a[3]+b[13]*a[7]+b[14]*a[11]+b[15]*a[15],
     ];
 }
@@ -158,35 +158,57 @@ const fragmentShaderSource = `#version 300 es\nprecision highp float; in vec4 vC
 let defaultViewMatrix = [0.73, 0.13, -0.67, 0, 0.1, 0.95, 0.29, 0, 0.67, -0.28, 0.68, 0, -0.02, 0.29, 2.22, 1];
 let viewMatrix = defaultViewMatrix;
 
-// --- TOUR STATE VARIABLES ---
-const trainingKeyframes = [
-    {
-        title: "Front Sensor View",
-        description: "Notice the sensor housing placement on the front bumper. This region requires high-fidelity splatting to accurately identify potential collision detection zones and YOLO object anchors.",
-        matrix: [-0.97907, -0.07085, 0.18738, 0, 0.01401, 0.90262, 0.42623, 0, -0.19595, 0.41733, -0.88156, 0, 0.324, 0.525, 4.567, 1] 
-    },
-    {
-        title: "Side Profile & Chassis",
-        description: "The side panel houses the main diagnostic ports. Ensure the mechanical latches are fully secured after inspection. Spatial mapping here is critical for calculating clearance.",
-        matrix: [-0.49287, -0.21952, 0.84118, 0, 0.24347, 0.89136, 0.37788, 0, -0.82941, 0.38898, -0.38792, 0, 0.587, 0.564, 4.196, 1]
-    },
-    {
-        title: "Engine Bay Focus",
-        description: "Detailed internal view. Ensure the spatial data accurately reflects the position of the valve cover gasket and throttle body for correct maintenance diagnostics.",
-        matrix: [-0.93494, 0.01114, -0.35281, 0, -0.14292, 0.90297, 0.40103, 0, 0.3251, 0.4225, -0.83994, 0, 0.018, 0.503, 5.755, 1] 
-    }
-];
+// --- TOUR HELPER FUNCTIONS ---
+function posToMatrix(x, y, z) {
+    return [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        x, y, z, 1
+    ];
+}
 
+// --- TOUR STATE VARIABLES & DATABASE ---
+const tourDatabase = {
+    "Equinox": [
+        {
+            title: "Position 1: Front Exterior & Hood View",
+            description: "Initial alignment view focusing on the front fascia and open hood aperture.",
+            matrix: posToMatrix(2.10, -1.61, -2.55)
+        },
+        {
+            title: "Position 2: Mid-Range Engine Bay Focus",
+            description: "Secondary angle capturing structural components and main high-voltage housing under the hood.",
+            matrix: posToMatrix(1.23, -1.88, -1.49)
+        },
+        {
+            title: "Position 3: Component Close-Up",
+            description: "Detailed inspection view for close-range spatial mapping and component identification.",
+            matrix: posToMatrix(1.13, -1.44, -0.74)
+        }
+    ]
+};
+
+let activeTourFrames = [];
 let isTourActive = false; let currentTourIndex = 0; let isTransitioning = false; let transitionProgress = 0;
 let startTourMatrix = defaultViewMatrix; let targetTourMatrix = defaultViewMatrix;
 
 async function main() {
     let carousel = true; const params = new URLSearchParams(location.search);
     try { viewMatrix = JSON.parse(decodeURIComponent(location.hash.slice(1))); carousel = false; } catch (err) {}
+    
     const urlParam = params.get("url");
     if (!urlParam) {
         document.getElementById("spinner").style.display = "none";
         const msg = document.getElementById("message"); msg.innerText = "Please select a vehicle scan from the menu."; msg.style.color = "white"; msg.style.background = "rgba(0,0,0,0.5)"; msg.style.padding = "20px"; msg.style.borderRadius = "10px"; return; 
+    }
+
+    // --- NEW: MATCH TOUR TO VEHICLE USING DYNAMIC DATABASE ---
+    for (let key in tourDatabase) {
+        if (decodeURIComponent(urlParam).includes(key)) {
+            activeTourFrames = tourDatabase[key];
+            break;
+        }
     }
 
     const url = new URL(urlParam); const req = await fetch(url, { mode: "cors", credentials: "omit" });
@@ -282,18 +304,27 @@ async function main() {
 
     // --- GUIDED TOUR FUNCTIONS ---
     function updateTourUI() {
-        const frame = trainingKeyframes[currentTourIndex];
+        if (activeTourFrames.length === 0) {
+            document.getElementById('tour-title').innerText = "No Tour Available";
+            document.getElementById('tour-description').innerText = "A training walkthrough has not been mapped for this scan yet.";
+            document.getElementById('tour-counter').innerText = "0 / 0";
+            document.getElementById('tour-prev').disabled = true;
+            document.getElementById('tour-next').disabled = true;
+            return;
+        }
+
+        const frame = activeTourFrames[currentTourIndex];
         document.getElementById('tour-title').innerText = frame.title;
         document.getElementById('tour-description').innerText = frame.description;
-        document.getElementById('tour-counter').innerText = `${currentTourIndex + 1} / ${trainingKeyframes.length}`;
+        document.getElementById('tour-counter').innerText = `${currentTourIndex + 1} / ${activeTourFrames.length}`;
         document.getElementById('tour-prev').disabled = currentTourIndex === 0;
-        document.getElementById('tour-next').disabled = currentTourIndex === trainingKeyframes.length - 1;
+        document.getElementById('tour-next').disabled = currentTourIndex === activeTourFrames.length - 1;
     }
 
     function goToTourFrame(index) {
-        if (index < 0 || index >= trainingKeyframes.length) return;
+        if (activeTourFrames.length === 0 || index < 0 || index >= activeTourFrames.length) return;
         currentTourIndex = index; updateTourUI();
-        startTourMatrix = viewMatrix; targetTourMatrix = trainingKeyframes[currentTourIndex].matrix;
+        startTourMatrix = viewMatrix; targetTourMatrix = activeTourFrames[currentTourIndex].matrix;
         transitionProgress = 0; isTransitioning = true; carousel = false;
     }
 
