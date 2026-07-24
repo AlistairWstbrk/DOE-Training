@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+	<head>
+		<title>Streamlit 3DGS Viewer</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+		<style>
+			/* --- STREAMLIT COMPONENT BASE CSS --- */
+			body {
+				overflow: hidden; margin: 0; height: 100vh; width: 100vw;
+				font-family: "Source Sans Pro", sans-serif;
+				background: #0E1117; 
+                color: #FAFAFA;
+			}
+			
+			.cube-wrapper { transform-style: preserve-3d; }
+			.cube { transform-style: preserve-3d; transform: rotateX(45deg) rotateZ(45deg); animation: rotation 2s infinite; }
+			.cube-faces { transform-style: preserve-3d; height: 80px; width: 80px; position: relative; transform-origin: 0 0; transform: translateX(0) translateY(0) translateZ(-40px); }
+			.cube-face { position: absolute; inset: 0; background: #FF4B4B; border: solid 1px #ffffff; }
+			.cube-face.top { transform: translateZ(80px); }
+			.cube-face.front { transform-origin: 0 50%; transform: rotateY(-90deg); }
+			.cube-face.back { transform-origin: 0 50%; transform: rotateY(-90deg) translateZ(-80px); }
+			.cube-face.right { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-80px); }
+			.cube-face.left { transform-origin: 50% 0; transform: rotateX(-90deg) translateY(-80px) translateZ(80px); }
+			@keyframes rotation {
+				0% { transform: rotateX(45deg) rotateY(0) rotateZ(45deg); animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1); }
+				50% { transform: rotateX(45deg) rotateY(0) rotateZ(225deg); animation-timing-function: cubic-bezier(0.76, 0.05, 0.86, 0.06); }
+				100% { transform: rotateX(45deg) rotateY(0) rotateZ(405deg); animation-timing-function: cubic-bezier(0.17, 0.84, 0.44, 1); }
+			}
+
+			.scene, #message { position: absolute; display: flex; top: 0; right: 0; left: 0; bottom: 0; z-index: 2; height: 100%; width: 100%; align-items: center; justify-content: center; }
+			#message { font-weight: 600; font-size: 1rem; color: #FF4B4B; pointer-events: none; }
+			#progress { position: absolute; top: 0; height: 4px; background: #FF4B4B; z-index: 99; transition: width 0.1s ease-in-out; }
+			#caminfo { position: absolute; top: 10px; z-index: 999; right: 10px; color: rgba(250,250,250,0.5); font-size: 0.8rem;}
+			
+            #canvas { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; touch-action: none; z-index: 1;}
+
+            /* --- STREAMLIT-STYLE SIDEBAR CSS --- */
+            .streamlit-sidebar { position: absolute; top: 0; left: 0; bottom: 0; width: 320px; background-color: #262730; color: #FAFAFA; padding: 2rem 1.5rem; z-index: 1000; overflow-y: auto; overflow-x: hidden; box-shadow: 2px 0 10px rgba(0,0,0,0.2); box-sizing: border-box; border-right: 1px solid rgba(250, 250, 250, 0.1);}
+            .sidebar-section { margin-bottom: 24px; }
+            .sidebar-section label { display: block; margin-bottom: 8px; font-weight: 400; font-size: 14px; color: #FAFAFA; }
+            .st-input { width: 100%; padding: 0.5rem 0.75rem; margin-bottom: 16px; background-color: #0E1117; color: white; border: 1px solid rgba(250, 250, 250, 0.2); border-radius: 0.5rem; box-sizing: border-box; font-family: inherit; font-size: 14px; transition: border-color 0.2s ease;}
+            .st-input:focus { outline: none; border-color: #FF4B4B; }
+            .st-button { display: block; width: 100%; padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid rgba(250, 250, 250, 0.2); background-color: #262730; color: #FAFAFA; cursor: pointer; font-weight: 400; font-size: 14px; transition: all 0.2s ease; box-sizing: border-box; margin-bottom: 8px;}
+            .st-button-primary { background-color: #FF4B4B; color: white; border-color: #FF4B4B; }
+            .st-button-primary:hover { background-color: #FF6666; border-color: #FF6666; color: white; }
+            .st-button-secondary:hover { border-color: #FF4B4B; color: #FF4B4B; }
+            .st-slider { width: 100%; margin: 10px 0 15px 0; accent-color: #FF4B4B; }
+            hr { border-top: 1px solid rgba(250, 250, 250, 0.1); border-bottom: none; margin: 24px 0; }
+
+            /* --- WALKTHROUGH UI OVERLAY --- */
+            #tour-container { display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 450px; background: rgba(14, 17, 23, 0.95); color: #FAFAFA; padding: 20px; border-radius: 12px; border: 1px solid #4B90FF; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: 'Source Sans Pro', sans-serif; backdrop-filter: blur(8px); }
+            #tour-container .header { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(250,250,250,0.2); padding-bottom: 10px; margin-bottom: 15px; }
+            #tour-container h3 { margin: 0; color: #4B90FF; font-size: 1.25rem; font-weight: 600; }
+            #tour-container p { margin: 0 0 20px 0; font-size: 0.95rem; line-height: 1.5; color: #E0E0E0; }
+            #tour-container .btn-group { display: flex; justify-content: space-between; gap: 10px; }
+            .tour-btn { flex: 1; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; font-size: 14px; transition: opacity 0.2s; }
+            .tour-btn.prev { background-color: #334155; color: white; }
+            .tour-btn.next { background-color: #4B90FF; color: white; }
+            .tour-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+            .close-tour { position: absolute; top: -10px; right: -10px; background: #334155; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); }
+		</style>
+	</head>
+	<body>
+		<div id="progress"></div>
+		<div id="message"></div>
+		<div class="scene" id="spinner">
+			<div class="cube-wrapper">
+				<div class="cube">
+					<div class="cube-faces">
+						<div class="cube-face bottom"></div><div class="cube-face top"></div><div class="cube-face left"></div><div class="cube-face right"></div><div class="cube-face back"></div><div class="cube-face front"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+        <canvas id="canvas"></canvas>
+
+        <div id="devCrosshair" style="display:none; position:absolute; top:50%; left:50%; width:24px; height:24px; transform:translate(-50%, -50%); pointer-events:none; z-index:100;">
+            <div style="position:absolute; top:11px; left:0; width:24px; height:2px; background:rgba(255, 75, 75, 0.9);"></div>
+            <div style="position:absolute; top:0; left:11px; width:2px; height:24px; background:rgba(255, 75, 75, 0.9);"></div>
+            <div style="position:absolute; top:10px; left:10px; width:4px; height:4px; background:white; border-radius:50%;"></div>
+        </div>
+        <div id="devMarker" style="display:none; position:absolute; width:16px; height:16px; background:#00ff88; border:2px solid black; border-radius:50%; transform:translate(-50%, -50%); z-index:101; pointer-events:none; box-shadow: 0 0 10px #00ff88;"></div>
+
+		<div id="caminfo"><span id="camid"></span></div>
+
+        <div class="streamlit-sidebar">
+            <div class="sidebar-section">
+                <label for="categorySelect">Filter by Type</label>
+                <select id="categorySelect" class="st-input">
+                    <option value="" disabled selected>Loading...</option>
+                </select>
+
+                <label for="modelSelect">Select Scan</label>
+                <select id="modelSelect" class="st-input" onchange="changeModel(this.value)">
+                    <option value="" disabled selected>-- Select a Type first --</option>
+                </select>
+
+                <label for="cameraSelect" style="margin-top: 8px;">Select View Angle</label>
+                <select id="cameraSelect" class="st-input" onchange="changeCameraView(this.value)">
+                    <option value="" disabled selected>-- Select a Scan first --</option>
+                </select>
+            </div>
+
+            <hr>
+
+            <div class="sidebar-section">
+                <h3 style="margin-top: 0; font-size: 1.1rem; color: #4B90FF;">🎓 Guided Training Tour</h3>
+                <p style="font-size: 0.85rem; color: #ccc; margin-bottom: 15px;">Launch an interactive walkthrough of key components and diagnostics.</p>
+                <button id="startTourBtn" class="st-button" style="background-color: #4B90FF; color: white; border: none; font-weight: 600;">▶ Start Walkthrough</button>
+            </div>
+
+            <hr>
+
+            <div class="sidebar-section">
+                <h3 style="margin-top: 0; font-size: 1.1rem; color: #00ff88;">🛠️ Scene Maker (Dev)</h3>
+                
+                <label style="display:flex; align-items:center; cursor:pointer; margin-bottom: 15px;">
+                    <input type="checkbox" id="devModeToggle" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #FF4B4B;">
+                    <span style="font-size: 14px; font-weight: 600;">Enable Dev Mode</span>
+                </label>
+
+                <div id="devModeControls" style="display: none; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px; border: 1px dashed rgba(250, 250, 250, 0.2);">
+                    
+                    <h4 style="margin-top: 0; font-size: 1rem; color: #00ff88; border-bottom: 1px solid rgba(250, 250, 250, 0.1); padding-bottom: 4px;">📍 Create Info Point</h4>
+                    <button id="dropPinBtn" class="st-button st-button-primary">📍 Drop Pin at Crosshair</button>
+                    
+                    <div id="depthControlBlock" style="display:none; margin-top: 15px;">
+                        <label for="depthSlider">Adjust Depth: <span id="depthValText" style="color:#00ff88;">2.00</span></label>
+                        <input type="range" id="depthSlider" class="st-slider" min="0.1" max="6.0" step="0.05" value="2.0">
+                        
+                        <label>Annotation ID</label>
+                        <input type="text" id="annoId" class="st-input" value="anno-new-1">
+                        
+                        <label>Title</label>
+                        <input type="text" id="annoTitle" class="st-input" value="⚡ New Component">
+                        
+                        <label>Target URL Snippet</label>
+                        <input type="text" id="annoUrl" class="st-input" placeholder="e.g. Equinox">
+                        
+                        <button id="generatePointBtn" class="st-button st-button-primary" style="background-color:#00ff88; color:black; border-color:#00ff88;">⚙️ Generate Point JSON</button>
+                    </div>
+
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed rgba(250, 250, 250, 0.1);">
+                        <h4 style="margin-top: 0; font-size: 1rem; color: #ffbd45; border-bottom: 1px solid rgba(250, 250, 250, 0.1); padding-bottom: 4px;">📷 Extract Camera Angle</h4>
+                        
+                        <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 4px; border: 1px solid rgba(250, 250, 250, 0.1); margin-bottom: 15px;">
+                            <label style="color: #ffbd45; font-size: 12px; margin-bottom: 6px;">1. Absolute Position (X, Y, Z)</label>
+                            <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+                                <input type="number" id="tuneX" class="st-input" step="0.05" style="margin-bottom:0;" placeholder="X">
+                                <input type="number" id="tuneY" class="st-input" step="0.05" style="margin-bottom:0;" placeholder="Y">
+                                <input type="number" id="tuneZ" class="st-input" step="0.05" style="margin-bottom:0;" placeholder="Z">
+                            </div>
+
+                            <label style="color: #ffbd45; font-size: 12px; display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>2. Rotation Nudge Pad</span>
+                                <span style="color:#aaa; font-weight:normal;">Step: <span id="rotStepVal">1.0</span>°</span>
+                            </label>
+                            <input type="range" id="rotStep" class="st-slider" min="0.1" max="5.0" step="0.1" value="1.0" style="margin: 5px 0 10px 0;">
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                <button id="tiltUpBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">⤴️ Tilt Up</button>
+                                <button id="tiltDownBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">⤵️ Tilt Down</button>
+                                <button id="panLeftBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">↺ Pan Left</button>
+                                <button id="panRightBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">↻ Pan Right</button>
+                                <button id="rollLeftBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">↶ Roll Left</button>
+                                <button id="rollRightBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">↷ Roll Right</button>
+                            </div>
+                            
+                            <button id="centerOriginBtn" class="st-button st-button-secondary" style="margin-top: 10px; border-color: rgba(255,189,69,0.3);">🎯 Reset Camera to Start</button>
+                        </div>
+
+                        <button id="generateCamBtn" class="st-button st-button-primary" style="background-color: #ffbd45; color: black; border-color:#ffbd45;">⚙️ Capture View to JSON</button>
+                    </div>
+                </div>
+
+                <textarea id="devOutputBox" rows="6" class="st-input" style="display:none; font-family: monospace; font-size: 11px; resize: vertical; margin-top: 10px;" readonly></textarea>
+                <button id="copyDevBtn" class="st-button st-button-secondary" style="display:none;">📋 Copy JSON</button>
+
+            </div>
+        </div>
+
+        <!-- WALKTHROUGH UI OVERLAY -->
+        <div id="tour-container">
+            <button class="close-tour" id="closeTourBtn">✖</button>
+            <div class="header">
+                <h3 id="tour-title">Tour Loading...</h3>
+                <span id="tour-counter" style="color: #94a3b8; font-size: 0.9rem;">1 / X</span>
+            </div>
+            <p id="tour-description">Initializing spatial data...</p>
+            <div class="btn-group">
+                <button id="tour-prev" class="tour-btn prev">Previous</button>
+                <button id="tour-next" class="tour-btn next">Next Frame</button>
+            </div>
+        </div>
+
+        <script src="main.js"></script>
+
+        <script>
+            const customCameras = {
+                "Equinox": [
+                    { "name": "Overview", "matrix": [0.73, 0.13, -0.67, 0, 0.1, 0.95, 0.29, 0, 0.67, -0.28, 0.68, 0, -0.02, 0.29, 2.22, 1] }
+                ],
+                "personalvehiclescan": [
+                    { "name": "Front Bumper View", "matrix": [-0.97907, -0.07085, 0.18738, 0, 0.01401, 0.90262, 0.42623, 0, -0.19595, 0.41733, -0.88156, 0, 0.324, 0.525, 4.567, 1] },
+                    { "name": "Side Profile", "matrix": [-0.49287, -0.21952, 0.84118, 0, 0.24347, 0.89136, 0.37788, 0, -0.82941, 0.38898, -0.38792, 0, 0.587, 0.564, 4.196, 1] },
+                    { "name": "Engine Bay Focus", "matrix": [-0.93494, 0.01114, -0.35281, 0, -0.14292, 0.90297, 0.40103, 0, 0.3251, 0.4225, -0.83994, 0, 0.018, 0.503, 5.755, 1] }
+                ]
+            };
+
+            let allModels = [];
+            const categorySelect = document.getElementById('categorySelect');
+            const modelSelect = document.getElementById('modelSelect');
+            const cameraSelect = document.getElementById('cameraSelect');
+
+            fetch('models.json')
+                .then(response => { if (!response.ok) throw new Error("Could not find models.json"); return response.json(); })
+                .then(data => { allModels = data; initializeMenu(); })
+                .catch(error => { console.error('Error:', error); categorySelect.innerHTML = '<option disabled>Error loading data</option>'; });
+
+            function initializeMenu() {
+                const categories = [...new Set(allModels.map(item => item.category || "Uncategorized"))];
+                categorySelect.innerHTML = '<option value="" disabled selected>-- Select Type --</option>';
+                categories.forEach(cat => { const option = document.createElement('option'); option.value = cat; option.textContent = cat; categorySelect.appendChild(option); });
+                categorySelect.addEventListener('change', (e) => updateModelDropdown(e.target.value));
+                checkPersistence();
+            }
+
+            function updateModelDropdown(selectedCategory) {
+                const filteredModels = allModels.filter(m => (m.category || "Uncategorized") === selectedCategory);
+                modelSelect.innerHTML = '<option value="" disabled selected>-- Choose a Scan --</option>';
+                cameraSelect.innerHTML = '<option value="" disabled selected>-- Select a Scan first --</option>';
+                filteredModels.forEach(model => { const option = document.createElement('option'); option.value = model.url; option.textContent = model.name; modelSelect.appendChild(option); });
+            }
+
+            function changeModel(url) { window.location.search = '?url=' + url; }
+
+            function checkPersistence() {
+                const rawUrl = new URLSearchParams(window.location.search).get('url');
+                if (rawUrl) {
+                    const currentUrlDecoded = decodeURIComponent(rawUrl).trim();
+                    const matchedModel = allModels.find(m => decodeURIComponent(m.url).trim() === currentUrlDecoded);
+                    if (matchedModel) {
+                        const cat = matchedModel.category || "Uncategorized";
+                        categorySelect.value = cat; updateModelDropdown(cat); modelSelect.value = matchedModel.url;
+                        populateCameraDropdown(currentUrlDecoded);
+                    }
+                }
+            }
+
+            function populateCameraDropdown(urlStr) {
+                cameraSelect.innerHTML = '<option value="" disabled selected>-- Select a View Angle --</option>';
+                let foundMatch = false;
+                for (let keyword in customCameras) {
+                    if (urlStr.includes(keyword)) {
+                        foundMatch = true;
+                        customCameras[keyword].forEach(cam => {
+                            const option = document.createElement('option');
+                            option.value = JSON.stringify(cam.matrix);
+                            option.textContent = cam.name;
+                            cameraSelect.appendChild(option);
+                        });
+                    }
+                }
+                if (!foundMatch) cameraSelect.innerHTML = '<option value="" disabled selected>No saved views available</option>';
+            }
+
+            function changeCameraView(matrixStr) {
+                if(!matrixStr) return;
+                window.location.hash = encodeURIComponent(matrixStr);
+            }
+
+            // --- DEV MODE CONTROLS ---
+            const devModeToggle = document.getElementById('devModeToggle');
+            const devModeControls = document.getElementById('devModeControls');
+            const devCrosshair = document.getElementById('devCrosshair');
+            const devMarker = document.getElementById('devMarker');
+            
+            const dropPinBtn = document.getElementById('dropPinBtn');
+            const depthControlBlock = document.getElementById('depthControlBlock');
+            const depthSlider = document.getElementById('depthSlider');
+            const depthValText = document.getElementById('depthValText');
+            
+            const generatePointBtn = document.getElementById('generatePointBtn');
+            const generateCamBtn = document.getElementById('generateCamBtn');
+            const devOutputBox = document.getElementById('devOutputBox');
+            const copyDevBtn = document.getElementById('copyDevBtn');
+
+            let isDevMode = false;
+            let pinDropped = false;
+            let pinCamPos = [0,0,0];
+            let pinForwardVec = [0,0,0];
+            let calculatedTarget = [0,0,0];
+
+            devModeToggle.addEventListener('change', (e) => {
+                isDevMode = e.target.checked;
+                devModeControls.style.display = isDevMode ? 'block' : 'none';
+                devCrosshair.style.display = isDevMode ? 'block' : 'none';
+                if(!isDevMode) {
+                    pinDropped = false;
+                    devMarker.style.display = 'none';
+                    depthControlBlock.style.display = 'none';
+                    devOutputBox.style.display = 'none';
+                    copyDevBtn.style.display = 'none';
+                }
+            });
+
+            dropPinBtn.addEventListener('click', () => {
+                if (typeof viewMatrix === 'undefined' || typeof invert4 === 'undefined') return;
+                let camWorld = invert4(viewMatrix);
+                pinCamPos = [camWorld[12], camWorld[13], camWorld[14]];
+                pinForwardVec = [-camWorld[8], -camWorld[9], -camWorld[10]];
+                depthSlider.value = 2.0; depthValText.innerText = "2.00";
+                updateCalculatedTarget();
+                pinDropped = true;
+                devMarker.style.display = 'block';
+                depthControlBlock.style.display = 'block';
+            });
+
+            depthSlider.addEventListener('input', (e) => {
+                depthValText.innerText = parseFloat(e.target.value).toFixed(2);
+                updateCalculatedTarget();
+            });
+
+            function updateCalculatedTarget() {
+                let depth = parseFloat(depthSlider.value);
+                calculatedTarget = [
+                    pinCamPos[0] + pinForwardVec[0] * depth,
+                    pinCamPos[1] + pinForwardVec[1] * depth,
+                    pinCamPos[2] + pinForwardVec[2] * depth
+                ];
+            }
+
+            function renderDevModeLoop() {
+                if (isDevMode && typeof viewMatrix !== 'undefined' && typeof invert4 !== 'undefined') {
+                    const activeElem = document.activeElement;
+                    const tuneX = document.getElementById('tuneX');
+                    const tuneY = document.getElementById('tuneY');
+                    const tuneZ = document.getElementById('tuneZ');
+                    
+                    if (activeElem !== tuneX && activeElem !== tuneY && activeElem !== tuneZ) {
+                        let inv = invert4(viewMatrix);
+                        tuneX.value = inv[12].toFixed(2);
+                        tuneY.value = inv[13].toFixed(2);
+                        tuneZ.value = inv[14].toFixed(2);
+                    }
+
+                    if (pinDropped && typeof camera !== 'undefined' && typeof getProjectionMatrix !== 'undefined') {
+                        let proj = getProjectionMatrix(camera.fx, camera.fy, innerWidth, innerHeight);
+                        let viewProj = multiply4(proj, viewMatrix); 
+                        let clipSpace = multiplyMatrixAndPoint(viewProj, calculatedTarget);
+                        let w = clipSpace[3];
+                        if (w > 0.1) {
+                            let ndcX = clipSpace[0] / w; let ndcY = clipSpace[1] / w;
+                            if (ndcX >= -1.2 && ndcX <= 1.2 && ndcY >= -1.2 && ndcY <= 1.2) {
+                                devMarker.style.display = 'block';
+                                devMarker.style.left = ((ndcX * 0.5 + 0.5) * innerWidth) + 'px';
+                                devMarker.style.top = (-(ndcY * 0.5 - 0.5) * innerHeight) + 'px';
+                            } else devMarker.style.display = 'none';
+                        } else devMarker.style.display = 'none';
+                    }
+                }
+                requestAnimationFrame(renderDevModeLoop);
+            }
+            requestAnimationFrame(renderDevModeLoop);
+
+            function updateMatrixFromXYZ() {
+                if (typeof viewMatrix === 'undefined' || typeof invert4 === 'undefined') return;
+                let inv = invert4(viewMatrix);
+                inv[12] = parseFloat(document.getElementById('tuneX').value) || 0;
+                inv[13] = parseFloat(document.getElementById('tuneY').value) || 0;
+                inv[14] = parseFloat(document.getElementById('tuneZ').value) || 0;
+                viewMatrix = invert4(inv);
+            }
+            document.getElementById('tuneX').addEventListener('input', updateMatrixFromXYZ);
+            document.getElementById('tuneY').addEventListener('input', updateMatrixFromXYZ);
+            document.getElementById('tuneZ').addEventListener('input', updateMatrixFromXYZ);
+
+            const rotStepSlider = document.getElementById('rotStep');
+            const rotStepVal = document.getElementById('rotStepVal');
+            
+            rotStepSlider.addEventListener('input', (e) => {
+                rotStepVal.innerText = parseFloat(e.target.value).toFixed(1);
+            });
+
+            function nudgeRotation(axisX, axisY, axisZ, direction) {
+                if (typeof viewMatrix === 'undefined' || typeof invert4 === 'undefined' || typeof rotate4 === 'undefined') return;
+                let step = parseFloat(rotStepSlider.value) * (Math.PI / 180) * direction;
+                let inv = invert4(viewMatrix);
+                inv = rotate4(inv, step, axisX, axisY, axisZ);
+                viewMatrix = invert4(inv);
+            }
+
+            document.getElementById('tiltUpBtn').onclick = () => nudgeRotation(1, 0, 0, -1);
+            document.getElementById('tiltDownBtn').onclick = () => nudgeRotation(1, 0, 0, 1);
+            document.getElementById('panLeftBtn').onclick = () => nudgeRotation(0, 1, 0, -1);
+            document.getElementById('panRightBtn').onclick = () => nudgeRotation(0, 1, 0, 1);
+            document.getElementById('rollLeftBtn').onclick = () => nudgeRotation(0, 0, 1, -1);
+            document.getElementById('rollRightBtn').onclick = () => nudgeRotation(0, 0, 1, 1);
+
+            document.getElementById('centerOriginBtn').onclick = () => {
+                if(typeof defaultViewMatrix !== 'undefined') viewMatrix = defaultViewMatrix;
+            };
+
+            generatePointBtn.addEventListener('click', () => {
+                const roundedPos = calculatedTarget.map(v => Math.round(v * 100) / 100);
+                const finalJson = {
+                    id: document.getElementById('annoId').value || "anno-new",
+                    position: roundedPos,
+                    title: document.getElementById('annoTitle').value,
+                    description: "Description text goes here.",
+                    targetUrlSnippet: document.getElementById('annoUrl').value
+                };
+                devOutputBox.value = JSON.stringify(finalJson, null, 4) + ",";
+                devOutputBox.style.display = 'block';
+                copyDevBtn.style.display = 'block';
+            });
+
+            generateCamBtn.addEventListener('click', () => {
+                if (typeof viewMatrix !== 'undefined' && typeof invert4 !== 'undefined') {
+                    let inv = invert4(viewMatrix);
+                    let pos = [inv[12], inv[13], inv[14]];
+                    let rot = [
+                        [viewMatrix[0], viewMatrix[1], viewMatrix[2]],
+                        [viewMatrix[4], viewMatrix[5], viewMatrix[6]],
+                        [viewMatrix[8], viewMatrix[9], viewMatrix[10]]
+                    ];
+                    const cleanPos = pos.map(n => Math.round(n * 1000) / 1000);
+                    const cleanRot = rot.map(row => row.map(n => Math.round(n * 100000) / 100000));
+                    const camJson = {
+                        id: 99,
+                        img_name: "custom_dev_view",
+                        width: 1959,
+                        height: 1090,
+                        position: cleanPos,
+                        rotation: cleanRot,
+                        fy: 1164.6601,
+                        fx: 1159.5880
+                    };
+                    devOutputBox.value = JSON.stringify(camJson, null, 4) + ",";
+                    devOutputBox.style.display = 'block';
+                    copyDevBtn.style.display = 'block';
+                }
+            });
+
+            copyDevBtn.addEventListener('click', () => {
+                if(devOutputBox.value) {
+                    navigator.clipboard.writeText(devOutputBox.value).then(() => {
+                        const originalText = copyDevBtn.innerText;
+                        copyDevBtn.innerText = "✅ Copied to Clipboard!";
+                        copyDevBtn.style.borderColor = "#4CAF50"; copyDevBtn.style.color = "#4CAF50";
+                        setTimeout(() => { copyDevBtn.innerText = originalText; copyDevBtn.style.borderColor = "rgba(250, 250, 250, 0.2)"; copyDevBtn.style.color = "#FAFAFA"; }, 2000);
+                    });
+                }
+            });
+        </script>
+	</body>
+</html>

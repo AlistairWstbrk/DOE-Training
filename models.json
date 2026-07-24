@@ -1,0 +1,192 @@
+[
+    {
+        "name": "Chevrolet Blazer EV (Hood Open)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Chevrolet%20Blazer%20EV%20PPV%20(Hood%20Open).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Hood Closed)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Hood%20Closed).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Hood Open - Video)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Hood%20Open%20Video).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Hood Open)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Hood%20Open).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Lifted - Video)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Lifted%20Video%20DSC_0819).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Lifted)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Lifted).ply"
+    },
+    {
+        "name": "Chevrolet Equinox PPV (Hood Closed)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Chevrolet%20Equinox%20PPV%20EV%20(Hood%20Closed).ply"
+    },
+    {
+        "name": "Chevrolet Equinox PPV (Hood Open)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Chevrolet%20Equinox%20PPV%20EV%20(Hood%20Open).ply"
+    },
+    {
+        "name": "Ford E-Transit (Hood Closed)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Ford%20ETransit%20(Hood%20Closed).ply"
+    },
+    {
+        "name": "Ford E-Transit (Hood Open)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Ford%20ETransit%20(Hood%20Open).ply"
+    },
+    {
+        "name": "2011 Kia Soul (Licht Feld Test)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/soulscan.ply?download=true"
+    },
+    {
+        "name": "Ford E-Transit (Video Source)",
+        "category": "Uncropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Vehicle%20Scans/Ford%20ETransit%20(Video).ply"
+    },
+    {
+        "name": "Chevrolet Blazer EV PPV (Hood Open)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Chevrolet%20Blazer%20EV%20PPV%20(Hood%20Open).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Hood Closed)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Hood%20Closed).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Hood Open Video)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Hood%20Open%20Video).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Hood Open)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Hood%20Open).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Lifted Video DSC_0819)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Lifted%20Video%20DSC_0819).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Lifted Video DSC_0981)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Lifted%20Video%20DSC_0981).ply"
+    },
+    {
+        "name": "Chevrolet Equinox EV (Lifted)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Chevrolet%20Equinox%20EV%20(Lifted).ply"
+    },
+    {
+        "name": "Chevrolet Equinox PPV EV (Hood Closed)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Chevrolet%20Equinox%20PPV%20EV%20(Hood%20Closed).ply"
+    },
+    {
+        "name": "Chevrolet Equinox PPV EV (Hood Open)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Chevrolet%20Equinox%20PPV%20EV%20(Hood%20Open).ply"
+    },
+    {
+        "name": "Ford ETransit (Hood Closed)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Ford%20ETransit%20(Hood%20Closed).ply"
+    },
+    {
+        "name": "Ford ETransit (Hood Open)",
+        "category": "Cropped",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20Cropped%20Vehicle%20Scans/Ford%20ETransit%20(Hood%20Open).ply"
+    },
+    {
+        "name": "Chevy Blazer Hood Closed",
+        "category": "New Scans",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20New%20Vehicle%20Scans/Chevy%20Blazer%20Hood%20Closed%20(New).ply"
+    },
+    {
+        "name": "Chevy Blazer Hood Open",
+        "category": "New Scans",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20New%20Vehicle%20Scans/Chevy%20Blazer%20Hood%20Open%20(New).ply"
+    },
+    {
+        "name": "Equinox Hood Closed",
+        "category": "New Scans",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20New%20Vehicle%20Scans/Equinox%20Hood%20Closed%20(New).ply"
+    },
+    {
+        "name": "Equinox Hood Open",
+        "category": "New Scans",
+        "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20New%20Vehicle%20Scans/Equinox%20Hood%20Open%20(New).ply"
+    },
+    {
+    "name": "Chevy Blazer Hood Closed (Cropped)",
+    "category": "New Scans",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20New%20Vehicle%20Scans/Chevy%20Blazer%20Hood%20Closed%20(New)(Cropped).ply"
+  },
+  {
+    "name": "Chevy Blazer Hood Open (Cropped)",
+    "category": "New Scans",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20New%20Vehicle%20Scans/Chevy%20Blazer%20Hood%20Open%20(New)(Cropped).ply"
+  },
+  {
+    "name": "Equinox Hood Closed (Cropped)",
+    "category": "New Scans",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20New%20Vehicle%20Scans/Equinox%20Hood%20Closed%20(New)(Cropped).ply"
+  },
+  {
+    "name": "Equinox Hood Open (Cropped)",
+    "category": "New Scans",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/3DGS%20.ply%20New%20Vehicle%20Scans/Equinox%20Hood%20Open%20(New)(Cropped).ply"
+  },
+  {
+    "name": "Chevy Blazer Hood Closed",
+    "category": "Mipmap Scans",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Mipmap%20Scans/chevyblazerhoodclosed.ply"
+  },
+  {
+    "name": "Chevy Blazer Hood Open",
+    "category": "Mipmap Scans",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Mipmap%20Scans/chevyblazerhoodopen.ply"
+  },
+  {
+    "name": "Equinox Hood Closed",
+    "category": "Mipmap Scans",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Mipmap%20Scans/equinoxhoodclosed.ply"
+  },
+  {
+    "name": "Equinox Hood Open",
+    "category": "Mipmap Scans",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Mipmap%20Scans/equinoxhoodopen.ply"
+  },
+  {
+    "name": "Blazer PPV",
+    "category": "Example",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Refined%20vehicle%20scans/BLAZERPPVREFINED.ply"
+  },
+  {
+    "name": "Equinox",
+    "category": "Example",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Refined%20vehicle%20scans/EQUINOXREFINE.ply"
+  },
+  {
+    "name": "Personal Vehicle Test",
+    "category": "Personal Vehicle Test",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Personal%20Vehicle%20Scan/personalvehiclescan.ply"
+  }
+]
