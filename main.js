@@ -174,17 +174,17 @@ const tourDatabase = {
         {
             title: "Position 1: Front Exterior & Hood View",
             description: "Initial alignment view focusing on the front fascia and open hood aperture.",
-            matrix: posToMatrix(2.10, -1.61, -2.55)
+            matrix: [0.7,0.26,-0.67,0,0.02,0.92,0.37,0,0.72,-0.27,0.65,0,0.37,0.61,3.4,1]
         },
         {
             title: "Position 2: Mid-Range Engine Bay Focus",
             description: "Secondary angle capturing structural components and main high-voltage housing under the hood.",
-            matrix: posToMatrix(1.23, -1.88, -1.49)
+            matrix: [0.69,0.32,-0.65,0,0.02,0.89,0.46,0,0.73,-0.33,0.61,0,0.26,0.79,2.18,1]
         },
         {
             title: "Position 3: Component Close-Up",
             description: "Detailed inspection view for close-range spatial mapping and component identification.",
-            matrix: posToMatrix(1.13, -1.44, -0.74)
+            matrix: [0.62,0.32,-0.72,0,0.07,0.89,0.44,0,0.78,-0.33,0.54,0,-0.07,0.81,1.48,1]
         }
     ]
 };
