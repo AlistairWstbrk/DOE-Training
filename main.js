@@ -10,15 +10,14 @@ function getProjectionMatrix(fx, fy, width, height) {
 
 function getViewMatrix(camera) {
     const R = camera.rotation.flat(); const t = camera.position;
-    const camToWorld = [[R[0], R[1], R[2], 0], [R[3], R[4], R[5], 0], [R[6], R[7], R[8], 0], [-t[0] * R[0] - t[1] * R[3] - t[2] * R[6], -t[0] * R[1] - t[1] * R[4] - t[2] * R[7], -t[0] * R[2] - t[1] * R[5] - t[2] * R[8], 1]].flat();
-    return camToWorld;
+    return [[R[0], R[1], R[2], 0], [R[3], R[4], R[5], 0], [R[6], R[7], R[8], 0], [-t[0] * R[0] - t[1] * R[3] - t[2] * R[6], -t[0] * R[1] - t[1] * R[4] - t[2] * R[7], -t[0] * R[2] - t[1] * R[5] - t[2] * R[8], 1]].flat();
 }
 
 function multiply4(a, b) {
     return [
         b[0]*a[0]+b[1]*a[4]+b[2]*a[8]+b[3]*a[12], b[0]*a[1]+b[1]*a[5]+b[2]*a[9]+b[3]*a[13], b[0]*a[2]+b[1]*a[6]+b[2]*a[10]+b[3]*a[14], b[0]*a[3]+b[1]*a[7]+b[2]*a[11]+b[3]*a[15],
         b[4]*a[0]+b[5]*a[4]+b[6]*a[8]+b[7]*a[12], b[4]*a[1]+b[5]*a[5]+b[6]*a[9]+b[7]*a[13], b[4]*a[2]+b[5]*a[6]+b[6]*a[10]+b[7]*a[14], b[4]*a[3]+b[5]*a[7]+b[6]*a[11]+b[7]*a[15],
-        b[8]*a[0]+b[9]*a[4]+b[10]*a[8]+b[11]*a[12], b[8]*a[1]+b[9]*a[5]+b[10]*a[9]+b[11]*a[13], b[8]*a[2]+b[9]*a[6]+b[10]*a[10]+b[11]*a[14], b[8]*a[3]+b[9]*a[7]+b[10]*a[11]+b[15]*a[15], // NOTE: Small fix applied here
+        b[8]*a[0]+b[9]*a[4]+b[10]*a[8]+b[11]*a[12], b[8]*a[1]+b[9]*a[5]+b[10]*a[9]+b[11]*a[13], b[8]*a[2]+b[9]*a[6]+b[10]*a[10]+b[11]*a[14], b[8]*a[3]+b[9]*a[7]+b[10]*a[11]+b[11]*a[15],
         b[12]*a[0]+b[13]*a[4]+b[14]*a[8]+b[15]*a[12], b[12]*a[1]+b[13]*a[5]+b[14]*a[9]+b[15]*a[13], b[12]*a[2]+b[13]*a[6]+b[14]*a[10]+b[15]*a[14], b[12]*a[3]+b[13]*a[7]+b[14]*a[11]+b[15]*a[15],
     ];
 }
@@ -158,34 +157,13 @@ const fragmentShaderSource = `#version 300 es\nprecision highp float; in vec4 vC
 let defaultViewMatrix = [0.73, 0.13, -0.67, 0, 0.1, 0.95, 0.29, 0, 0.67, -0.28, 0.68, 0, -0.02, 0.29, 2.22, 1];
 let viewMatrix = defaultViewMatrix;
 
-// Updated helper: Negates coordinates so WebGL inversion resolves to +X, +Y, +Z in world space
-function posToMatrix(x, y, z) {
-    return [
-        1,  0,  0, 0,
-        0,  1,  0, 0,
-        0,  0,  1, 0,
-       -x, -y, -z, 1
-    ];
-}
+function posToMatrix(x, y, z) { return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -x, -y, -z, 1]; }
 
-// --- TOUR STATE VARIABLES & DATABASE ---
 const tourDatabase = {
     "Equinox": [
-        {
-            title: "Position 1: Front Exterior & Hood View",
-            description: "Initial alignment view focusing on the front fascia and open hood aperture.",
-            matrix: [0.7,0.26,-0.67,0,0.02,0.92,0.37,0,0.72,-0.27,0.65,0,0.37,0.61,3.4,1]
-        },
-        {
-            title: "Position 2: Mid-Range Engine Bay Focus",
-            description: "Secondary angle capturing structural components and main high-voltage housing under the hood.",
-            matrix: [0.69,0.32,-0.65,0,0.02,0.89,0.46,0,0.73,-0.33,0.61,0,0.26,0.79,2.18,1]
-        },
-        {
-            title: "Position 3: Component Close-Up",
-            description: "Detailed inspection view for close-range spatial mapping and component identification.",
-            matrix: [0.62,0.32,-0.72,0,0.07,0.89,0.44,0,0.78,-0.33,0.54,0,-0.07,0.81,1.48,1]
-        }
+        { title: "Position 1: Front Exterior & Hood View", description: "Initial alignment view focusing on the front fascia and open hood aperture.", matrix: posToMatrix(2.10, -1.61, -2.55) },
+        { title: "Position 2: Mid-Range Engine Bay Focus", description: "Secondary angle capturing structural components and main high-voltage housing under the hood.", matrix: posToMatrix(1.23, -1.88, -1.49) },
+        { title: "Position 3: Component Close-Up", description: "Detailed inspection view for close-range spatial mapping and component identification.", matrix: posToMatrix(1.13, -1.44, -0.74) }
     ]
 };
 
@@ -203,13 +181,87 @@ async function main() {
         const msg = document.getElementById("message"); msg.innerText = "Please select a vehicle scan from the menu."; msg.style.color = "white"; msg.style.background = "rgba(0,0,0,0.5)"; msg.style.padding = "20px"; msg.style.borderRadius = "10px"; return; 
     }
 
-    // --- NEW: MATCH TOUR TO VEHICLE USING DYNAMIC DATABASE ---
     for (let key in tourDatabase) {
-        if (decodeURIComponent(urlParam).includes(key)) {
-            activeTourFrames = tourDatabase[key];
-            break;
-        }
+        if (decodeURIComponent(urlParam).includes(key)) { activeTourFrames = tourDatabase[key]; break; }
     }
+
+    // --- INTEGRATED 3D ANNOTATIONS SYSTEM ---
+    const vehicleAnnotations = [
+        {
+            id: "12V Battery",
+            position: [3.14, -3.11, -2.86],
+            title: "12V Battery",
+            description: "For First Responders: Disconnecting the 12V system disables the High Voltage contactors and airbags. If 'Battery Danger Detected' is active, do not cut the 12V system during the thermal runaway mitigation cycle unless occupant extrication requires airbag disablement. Treat all high voltage components as energized.",
+            targetUrlSnippet: "Chevrolet Equinox EV (Hood Open)"
+        }
+    ];
+
+    let activeAnnotations = [];
+    document.querySelectorAll('.splat-marker').forEach(el => el.remove());
+
+    vehicleAnnotations.forEach(annoData => {
+        let decodedUrl = decodeURIComponent(urlParam || "");
+        if (decodedUrl.includes(annoData.targetUrlSnippet)) {
+            let el = document.createElement('div');
+            el.className = 'splat-marker'; 
+            el.innerHTML = `
+                <div class="anchor-point"></div>
+                <div class="connecting-line"></div>
+                <div class="splat-annotation">
+                    <div class="close-btn">✖</div>
+                    <div class="anno-title">${annoData.title}</div>
+                    <div class="anno-details">${annoData.description}</div>
+                </div>
+            `;
+            
+            let dot = el.querySelector('.anchor-point');
+            let box = el.querySelector('.splat-annotation');
+            let line = el.querySelector('.connecting-line');
+            let closeBtn = el.querySelector('.close-btn');
+
+            let isDragging = false;
+            let startMouseX = 0, startMouseY = 0;
+            const defaultOffsetX = 60; const defaultOffsetY = -90;
+            let offsetX = defaultOffsetX; let offsetY = defaultOffsetY;
+
+            function updateLine() {
+                let length = Math.hypot(offsetX, offsetY); 
+                let angle = Math.atan2(offsetY, offsetX);  
+                line.style.width = length + 'px';
+                line.style.transform = `rotate(${angle}rad)`;
+            }
+
+            dot.onclick = (e) => {
+                document.querySelectorAll('.splat-marker').forEach(m => m.classList.remove('active'));
+                offsetX = defaultOffsetX; offsetY = defaultOffsetY;
+                box.style.left = offsetX + 'px'; box.style.top = offsetY + 'px';
+                updateLine();
+                el.classList.add('active');
+                e.stopPropagation(); 
+            };
+
+            closeBtn.onclick = (e) => { el.classList.remove('active'); e.stopPropagation(); };
+
+            box.onmousedown = (e) => {
+                if(e.target.classList.contains('close-btn')) return; 
+                isDragging = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
+            };
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                offsetX += e.clientX - startMouseX; offsetY += e.clientY - startMouseY;
+                startMouseX = e.clientX; startMouseY = e.clientY;
+                box.style.left = offsetX + 'px'; box.style.top = offsetY + 'px';
+                updateLine();
+            });
+
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            box.style.left = offsetX + 'px'; box.style.top = offsetY + 'px'; updateLine();
+            document.body.appendChild(el);
+            activeAnnotations.push({ element: el, position: annoData.position });
+        }
+    });
 
     const url = new URL(urlParam); const req = await fetch(url, { mode: "cors", credentials: "omit" });
     if (req.status != 200) throw new Error(req.status + " Unable to load " + req.url);
@@ -254,7 +306,7 @@ async function main() {
 
     let activeKeys = []; let currentCameraIndex = 0;
     window.addEventListener("keydown", (e) => {
-        if(isTourActive) return; // Block keys during tour
+        if(isTourActive) return; 
         carousel = false;
         if (!activeKeys.includes(e.code)) activeKeys.push(e.code);
         if (/\d/.test(e.key)) { currentCameraIndex = parseInt(e.key); camera = cameras[currentCameraIndex] || cameras[0]; viewMatrix = getViewMatrix(camera); }
@@ -302,7 +354,6 @@ async function main() {
     window.addEventListener("gamepadconnected", (e) => { console.log(`Gamepad connected at index ${e.gamepad.index}: ${e.gamepad.id}.`); });
     let leftGamepadTrigger, rightGamepadTrigger;
 
-    // --- GUIDED TOUR FUNCTIONS ---
     function updateTourUI() {
         if (activeTourFrames.length === 0) {
             document.getElementById('tour-title').innerText = "No Tour Available";
@@ -338,7 +389,6 @@ async function main() {
     const frame = (now) => {
         let inv = invert4(viewMatrix);
         
-        // OVERRIDE MANUAL INPUTS IF TOUR IS ACTIVE
         if (isTransitioning) {
             transitionProgress += 0.02; 
             if (transitionProgress >= 1.0) { transitionProgress = 1.0; isTransitioning = false; }
@@ -354,7 +404,6 @@ async function main() {
             inv = currentCam; 
         } 
         else if (!isTourActive) {
-            // MANUAL KEYBOARD/GAMEPAD CONTROLS
             let shiftKey = activeKeys.includes("Shift") || activeKeys.includes("ShiftLeft") || activeKeys.includes("ShiftRight");
             if (activeKeys.includes("ArrowUp")) { if (shiftKey) inv = translate4(inv, 0, -0.03, 0); else inv = translate4(inv, 0, 0, 0.1); }
             if (activeKeys.includes("ArrowDown")) { if (shiftKey) inv = translate4(inv, 0, 0.03, 0); else inv = translate4(inv, 0, 0, -0.1); }
@@ -403,6 +452,30 @@ async function main() {
         let actualViewMatrix = viewMatrix;
         const viewProj = multiply4(projectionMatrix, actualViewMatrix);
         worker.postMessage({ view: viewProj });
+
+        // --- UPDATE ANNOTATION PIN POSITIONS ---
+        activeAnnotations.forEach(anno => {
+            let clipSpace = multiplyMatrixAndPoint(viewProj, anno.position);
+            let w = clipSpace[3];
+
+            if (w <= 0.1) {
+                anno.element.style.display = 'none';
+            } else {
+                let ndcX = clipSpace[0] / w;
+                let ndcY = clipSpace[1] / w;
+
+                if (ndcX < -1.2 || ndcX > 1.2 || ndcY < -1.2 || ndcY > 1.2) {
+                    anno.element.style.display = 'none';
+                } else {
+                    let screenX = (ndcX * 0.5 + 0.5) * innerWidth;
+                    let screenY = -(ndcY * 0.5 - 0.5) * innerHeight; 
+                    anno.element.style.display = 'block';
+                    anno.element.style.left = screenX + 'px';
+                    anno.element.style.top = screenY + 'px';
+                }
+            }
+        });
+
         const currentFps = 1000 / (now - lastFrame) || 0; avgFps = avgFps * 0.9 + currentFps * 0.1;
 
         if (vertexCount > 0) {
@@ -424,7 +497,6 @@ async function main() {
 
     const isPly = (splatData) => splatData[0] == 112 && splatData[1] == 108 && splatData[2] == 121 && splatData[3] == 10;
     
-    // --- RESTORED STREAMING CHUNK LOADER ---
     let bytesRead = 0; let lastVertexCount = -1; let stopLoading = false;
     while (true) {
         const { done, value } = await reader.read();
