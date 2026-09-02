@@ -578,7 +578,7 @@ async function main() {
         // --- EQUINOXREFINE_FINAL annotations ---
         {
             id: "RF_BatteryWarningLabel",
-            position: [0.78, -1.13, -2.74],
+            position: [0.43, -0.87, -0.88],
             title: "🟡 HV Battery Warning Label",
             description: "This label marks the location of the high voltage battery system. The HV battery is a Class B Li-Ion pack mounted under the vehicle as a structural floor component.\n\nThe HV system operates at 400V+ and may remain energized even when the vehicle is OFF, in PARK, or appears otherwise inactive.\n\nDo not touch, cut, or modify any orange high voltage cables or components. Do not lift the vehicle from any HV battery location — the pack is structural and damage can create a serious hazard.",
             warning: "HV system may be energized even with vehicle OFF. Do NOT cut orange cables.",
@@ -586,7 +586,7 @@ async function main() {
         },
         {
             id: "RF_12V",
-            position: [0.07, -1.38, -2.41],
+            position: [0.24, -0.71, -0.98],
             title: "🔋 12V Auxiliary Battery",
             description: "The 12V lead-acid auxiliary battery powers conventional vehicle systems and — critically — controls the HV contactors that connect the high voltage battery to the drivetrain.\n\nEmergency procedure:\n1. Double-cut the LV cable on BOTH sides of the yellow tape\n2. Remove the cut section entirely (no loose ends)\n3. Wait 10 seconds — airbag capacitor discharge\n4. Wait 60 seconds — HV system capacitor discharge\n\nThis single cut simultaneously disables the airbag system AND the HV contactors.",
             warning: "NEVER cut the 12V cable during an active 'Battery Danger Detected' thermal runaway event — unless occupant extrication requires airbag disablement.",
@@ -645,7 +645,6 @@ async function main() {
             el.className = 'splat-marker';
             el.innerHTML = `
                 <div class="anchor-point"></div>
-                <div class="connecting-line"></div>
                 <div class="splat-annotation">
                     <div class="close-btn">✖</div>
                     <div class="anno-title">${annoData.title}</div>
@@ -653,10 +652,9 @@ async function main() {
                     ${annoData.warning ? `<div class="anno-warning">⚠️ ${annoData.warning}</div>` : ''}
                 </div>
             `;
-            
+
             let dot = el.querySelector('.anchor-point');
             let box = el.querySelector('.splat-annotation');
-            let line = el.querySelector('.connecting-line');
             let closeBtn = el.querySelector('.close-btn');
 
             let isDragging = false;
@@ -664,27 +662,19 @@ async function main() {
             const defaultOffsetX = 60; const defaultOffsetY = -90;
             let offsetX = defaultOffsetX; let offsetY = defaultOffsetY;
 
-            function updateLine() {
-                let length = Math.hypot(offsetX, offsetY); 
-                let angle = Math.atan2(offsetY, offsetX);  
-                line.style.width = length + 'px';
-                line.style.transform = `rotate(${angle}rad)`;
-            }
-
             dot.onclick = (e) => {
                 document.querySelectorAll('.splat-marker').forEach(m => m.classList.remove('active'));
                 offsetX = defaultOffsetX; offsetY = defaultOffsetY;
                 box.style.left = offsetX + 'px'; box.style.top = offsetY + 'px';
-                updateLine();
                 el.classList.add('active');
-                e.stopPropagation(); 
+                e.stopPropagation();
             };
 
             closeBtn.onclick = (e) => { el.classList.remove('active'); e.stopPropagation(); };
 
             box.onmousedown = (e) => {
-                if(e.target.classList.contains('close-btn')) return; 
-                isDragging = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault(); 
+                if(e.target.classList.contains('close-btn')) return;
+                isDragging = true; startMouseX = e.clientX; startMouseY = e.clientY; e.preventDefault();
             };
 
             window.addEventListener('mousemove', (e) => {
@@ -692,12 +682,11 @@ async function main() {
                 offsetX += e.clientX - startMouseX; offsetY += e.clientY - startMouseY;
                 startMouseX = e.clientX; startMouseY = e.clientY;
                 box.style.left = offsetX + 'px'; box.style.top = offsetY + 'px';
-                updateLine();
             });
 
             window.addEventListener('mouseup', () => { isDragging = false; });
 
-            box.style.left = offsetX + 'px'; box.style.top = offsetY + 'px'; updateLine();
+            box.style.left = offsetX + 'px'; box.style.top = offsetY + 'px';
             document.body.appendChild(el);
             activeAnnotations.push({ element: el, position: annoData.position });
         }
@@ -745,6 +734,24 @@ async function main() {
         gl.uniformMatrix4fv(u_projection, false, projectionMatrix);
     };
     window.addEventListener("resize", resize); resize();
+
+    // --- COORDINATE PICKER (right-click on canvas) ---
+    const coordOverlay = document.createElement('div');
+    coordOverlay.id = 'coord-overlay';
+    coordOverlay.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(10,14,22,0.95);border:1px solid rgba(75,144,255,0.5);border-radius:8px;padding:10px 16px;font-size:0.78rem;color:#C8D8F0;z-index:3000;display:none;font-family:monospace;text-align:center;max-width:420px;';
+    document.body.appendChild(coordOverlay);
+
+    canvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const m = viewMatrix;
+        const cx = -(m[0]*m[12]+m[1]*m[13]+m[2]*m[14]);
+        const cy = -(m[4]*m[12]+m[5]*m[13]+m[6]*m[14]);
+        const cz = -(m[8]*m[12]+m[9]*m[13]+m[10]*m[14]);
+        const fmt = v => v.toFixed(3);
+        coordOverlay.innerHTML = `📍 Camera position (use as annotation position):<br><strong>[${fmt(cx)}, ${fmt(cy)}, ${fmt(cz)}]</strong><br><span style="color:#8899aa;font-size:0.72rem">Navigate close to component, then right-click to capture coordinates. Click to dismiss.</span>`;
+        coordOverlay.style.display = 'block';
+    });
+    coordOverlay.onclick = () => { coordOverlay.style.display = 'none'; };
 
     worker.onmessage = (e) => {
         if (e.data.buffer) {
