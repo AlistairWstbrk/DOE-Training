@@ -715,6 +715,51 @@ async function main() {
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texture);
     const indexBuffer = gl.createBuffer(); const a_index = gl.getAttribLocation(program, "index"); gl.enableVertexAttribArray(a_index); gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer); gl.vertexAttribIPointer(a_index, 1, gl.INT, false, 0, 0); gl.vertexAttribDivisor(a_index, 1);
 
+    // ── Background gradient program ────────────────────────────────────────────
+    const bgVS = `#version 300 es\nin vec2 a;\nout vec2 vP;\nvoid main(){vP=a;gl_Position=vec4(a,0.9999,1.);}`.trim();
+    const bgFS = `#version 300 es\nprecision highp float;\nin vec2 vP;out vec4 o;\nvoid main(){float t=vP.y*.5+.5;vec3 top=vec3(.07,.09,.14),bot=vec3(.16,.16,.18);o=vec4(mix(bot,top,smoothstep(0.,.7,t)),1.);}`.trim();
+    const bgProg = gl.createProgram();
+    { const v=gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(v,bgVS); gl.compileShader(v); const f=gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(f,bgFS); gl.compileShader(f); gl.attachShader(bgProg,v); gl.attachShader(bgProg,f); gl.linkProgram(bgProg); }
+    const bgBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,1,1,-1,1]), gl.STATIC_DRAW);
+    const bg_a = gl.getAttribLocation(bgProg, "a");
+
+    // ── Floor plane program ────────────────────────────────────────────────────
+    const FLOOR_Y = -1.42; // world-space Y of ground plane
+    const floorVS = `#version 300 es
+precision highp float;
+uniform mat4 uProj,uView;
+in vec2 a; out vec2 vXZ;
+void main(){vXZ=a;gl_Position=uProj*uView*vec4(a.x,${FLOOR_Y.toFixed(2)},a.y,1.);}`.trim();
+    const floorFS = `#version 300 es
+precision highp float;
+in vec2 vXZ; out vec4 o;
+void main(){
+    vec2 g=abs(fract(vXZ*.8+.5)-.5);
+    float line=1.-smoothstep(.0,.025,min(g.x,g.y));
+    vec3 col=mix(vec3(.12,.12,.13),vec3(.20,.20,.21),line*.55);
+    float r=length(vXZ)/7.;
+    float alpha=(1.-smoothstep(.65,1.,r))*.94;
+    o=vec4(col,alpha);
+}`.trim();
+    const floorProg = gl.createProgram();
+    { const v=gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(v,floorVS); gl.compileShader(v); const f=gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(f,floorFS); gl.compileShader(f); gl.attachShader(floorProg,v); gl.attachShader(floorProg,f); gl.linkProgram(floorProg); }
+    const S=8; const floorBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,floorBuf); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-S,-S,S,-S,S,S,-S,S]),gl.STATIC_DRAW);
+    const floor_a=gl.getAttribLocation(floorProg,"a"); const floor_uProj=gl.getUniformLocation(floorProg,"uProj"); const floor_uView=gl.getUniformLocation(floorProg,"uView");
+
+    // Restore gaussian program state
+    gl.useProgram(program); gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer); gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
+
+    // ── Camera clamp helper ────────────────────────────────────────────────────
+    const CAM_MIN_Y=-0.60, CAM_MIN_DIST=1.2, CAM_MAX_DIST=9.0, CAR_CX=0, CAR_CY=-0.74, CAR_CZ=0.22;
+    function clampCamera(inv) {
+        if (inv[13] < CAM_MIN_Y) inv[13] = CAM_MIN_Y;
+        const dx=inv[12]-CAR_CX, dy=inv[13]-CAR_CY, dz=inv[14]-CAR_CZ;
+        const dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
+        if (dist<CAM_MIN_DIST){const s=CAM_MIN_DIST/dist;inv[12]=CAR_CX+dx*s;inv[13]=Math.max(CAR_CY+dy*s,CAM_MIN_Y);inv[14]=CAR_CZ+dz*s;}
+        if (dist>CAM_MAX_DIST){const s=CAM_MAX_DIST/dist;inv[12]=CAR_CX+dx*s;inv[13]=CAR_CY+dy*s;inv[14]=CAR_CZ+dz*s;}
+        return inv;
+    }
+
     const resize = () => {
         const fxScaled = camera.fx * innerWidth / camera.width;
         const fyScaled = camera.fy * innerHeight / camera.height;
@@ -766,10 +811,10 @@ async function main() {
         if(isTourActive) return;
         carousel = false; e.preventDefault();
         const scale = e.deltaMode == 1 ? 10 : e.deltaMode == 2 ? innerHeight : 1; let inv = invert4(viewMatrix);
-        if (e.shiftKey) { inv = translate4(inv, (e.deltaX * scale) / innerWidth, (e.deltaY * scale) / innerHeight, 0); } 
-        else if (e.ctrlKey || e.metaKey) { inv = translate4(inv, 0, 0, (-10 * (e.deltaY * scale)) / innerHeight); } 
+        if (e.shiftKey) { inv = translate4(inv, (e.deltaX * scale) / innerWidth, (e.deltaY * scale) / innerHeight, 0); }
+        else if (e.ctrlKey || e.metaKey) { inv = translate4(inv, 0, 0, (-10 * (e.deltaY * scale)) / innerHeight); }
         else { let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, -(e.deltaX * scale) / innerWidth, 0, 1, 0); inv = rotate4(inv, (e.deltaY * scale) / innerHeight, 1, 0, 0); inv = translate4(inv, 0, 0, -d); }
-        viewMatrix = invert4(inv);
+        viewMatrix = invert4(clampCamera(inv));
     }, { passive: false });
 
     let startX, startY, down;
@@ -778,8 +823,8 @@ async function main() {
     canvas.addEventListener("mousemove", (e) => {
         if(isTourActive) return;
         e.preventDefault();
-        if (down == 1) { let inv = invert4(viewMatrix); let dx = (5 * (e.clientX - startX)) / innerWidth; let dy = (5 * (e.clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(inv); startX = e.clientX; startY = e.clientY; } 
-        else if (down == 2) { let inv = invert4(viewMatrix); inv = translate4(inv, (-10 * (e.clientX - startX)) / innerWidth, 0, (10 * (e.clientY - startY)) / innerHeight); viewMatrix = invert4(inv); startX = e.clientX; startY = e.clientY; }
+        if (down == 1) { let inv = invert4(viewMatrix); let dx = (5 * (e.clientX - startX)) / innerWidth; let dy = (5 * (e.clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(clampCamera(inv)); startX = e.clientX; startY = e.clientY; }
+        else if (down == 2) { let inv = invert4(viewMatrix); inv = translate4(inv, (-10 * (e.clientX - startX)) / innerWidth, 0, (10 * (e.clientY - startY)) / innerHeight); viewMatrix = invert4(clampCamera(inv)); startX = e.clientX; startY = e.clientY; }
     });
     canvas.addEventListener("mouseup", (e) => { e.preventDefault(); down = false; startX = 0; startY = 0; });
 
@@ -788,8 +833,8 @@ async function main() {
     canvas.addEventListener("touchmove", (e) => {
         if(isTourActive) return;
         e.preventDefault();
-        if (e.touches.length === 1 && down) { let inv = invert4(viewMatrix); let dx = (4 * (e.touches[0].clientX - startX)) / innerWidth; let dy = (4 * (e.touches[0].clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(inv); startX = e.touches[0].clientX; startY = e.touches[0].clientY; } 
-        else if (e.touches.length === 2) { const dtheta = Math.atan2(startY - altY, startX - altX) - Math.atan2(e.touches[0].clientY - e.touches[1].clientY, e.touches[0].clientX - e.touches[1].clientX); const dscale = Math.hypot(startX - altX, startY - altY) / Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); const dx = (e.touches[0].clientX + e.touches[1].clientX - (startX + altX)) / 2; const dy = (e.touches[0].clientY + e.touches[1].clientY - (startY + altY)) / 2; let inv = invert4(viewMatrix); inv = rotate4(inv, dtheta, 0, 0, 1); inv = translate4(inv, -dx / innerWidth, -dy / innerHeight, 0); inv = translate4(inv, 0, 0, 3 * (1 - dscale)); viewMatrix = invert4(inv); startX = e.touches[0].clientX; altX = e.touches[1].clientX; startY = e.touches[0].clientY; altY = e.touches[1].clientY; }
+        if (e.touches.length === 1 && down) { let inv = invert4(viewMatrix); let dx = (4 * (e.touches[0].clientX - startX)) / innerWidth; let dy = (4 * (e.touches[0].clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(clampCamera(inv)); startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
+        else if (e.touches.length === 2) { const dtheta = Math.atan2(startY - altY, startX - altX) - Math.atan2(e.touches[0].clientY - e.touches[1].clientY, e.touches[0].clientX - e.touches[1].clientX); const dscale = Math.hypot(startX - altX, startY - altY) / Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); const dx = (e.touches[0].clientX + e.touches[1].clientX - (startX + altX)) / 2; const dy = (e.touches[0].clientY + e.touches[1].clientY - (startY + altY)) / 2; let inv = invert4(viewMatrix); inv = rotate4(inv, dtheta, 0, 0, 1); inv = translate4(inv, -dx / innerWidth, -dy / innerHeight, 0); inv = translate4(inv, 0, 0, 3 * (1 - dscale)); viewMatrix = invert4(clampCamera(inv)); startX = e.touches[0].clientX; altX = e.touches[1].clientX; startY = e.touches[0].clientY; altY = e.touches[1].clientY; }
     }, { passive: false });
     canvas.addEventListener("touchend", (e) => { e.preventDefault(); down = false; startX = 0; startY = 0; }, { passive: false });
 
@@ -911,7 +956,7 @@ async function main() {
             inv = rotate4(inv, -0.1 * jumpDelta, 1, 0, 0);
         }
 
-        viewMatrix = invert4(inv);
+        viewMatrix = invert4(clampCamera(inv));
 
         if (carousel && !isTourActive) {
             let inv = invert4(defaultViewMatrix); const t = Math.sin((Date.now() - start) / 5000);
@@ -950,11 +995,37 @@ async function main() {
 
         const currentFps = 1000 / (now - lastFrame) || 0; avgFps = avgFps * 0.9 + currentFps * 0.1;
 
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        // 1. Background gradient (fills cleared areas, no depth)
+        gl.useProgram(bgProg);
+        gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); gl.enableVertexAttribArray(bg_a); gl.vertexAttribPointer(bg_a, 2, gl.FLOAT, false, 0, 0);
+        gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE);
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+
         if (vertexCount > 0) {
             document.getElementById("spinner").style.display = "none";
-            gl.uniformMatrix4fv(u_view, false, actualViewMatrix); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArraysInstanced(gl.TRIANGLE_FAN, 0, 4, vertexCount);
+            // 2. Gaussian splats
+            gl.useProgram(program);
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer); gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer); gl.vertexAttribIPointer(a_index, 1, gl.INT, false, 0, 0);
+            gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.ONE, gl.ONE_MINUS_DST_ALPHA, gl.ONE);
+            gl.uniformMatrix4fv(u_view, false, actualViewMatrix);
+            gl.drawArraysInstanced(gl.TRIANGLE_FAN, 0, 4, vertexCount);
+
+            // 3. Floor plane (fills through sparse/hollow areas)
+            gl.useProgram(floorProg);
+            gl.bindBuffer(gl.ARRAY_BUFFER, floorBuf); gl.enableVertexAttribArray(floor_a); gl.vertexAttribPointer(floor_a, 2, gl.FLOAT, false, 0, 0);
+            gl.uniformMatrix4fv(floor_uProj, false, projectionMatrix); gl.uniformMatrix4fv(floor_uView, false, actualViewMatrix);
+            gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE);
+            gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+
+            // Restore gaussian program state for next frame
+            gl.useProgram(program); gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer); gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer); gl.vertexAttribIPointer(a_index, 1, gl.INT, false, 0, 0);
+            gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.ONE, gl.ONE_MINUS_DST_ALPHA, gl.ONE);
         } else {
-            gl.clear(gl.COLOR_BUFFER_BIT); document.getElementById("spinner").style.display = ""; start = Date.now() + 2000;
+            document.getElementById("spinner").style.display = ""; start = Date.now() + 2000;
         }
         
         const progress = (100 * vertexCount) / (splatData.length / rowLength);
