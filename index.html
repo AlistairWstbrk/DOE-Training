@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 	<head>
-		<title>Streamlit 3DGS Viewer</title>
+		<title>Equinox EV — Emergency Response Training</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
 		<style>
-			/* --- STREAMLIT COMPONENT BASE CSS --- */
 			body {
 				overflow: hidden; margin: 0; height: 100vh; width: 100vw;
 				font-family: "Source Sans Pro", sans-serif;
-				background: #0E1117; 
-                color: #FAFAFA;
+				background: #0E1117;
+				color: #FAFAFA;
 			}
-			
+
+			/* --- Loading spinner --- */
 			.cube-wrapper { transform-style: preserve-3d; }
 			.cube { transform-style: preserve-3d; transform: rotateX(45deg) rotateZ(45deg); animation: rotation 2s infinite; }
 			.cube-faces { transform-style: preserve-3d; height: 80px; width: 80px; position: relative; transform-origin: 0 0; transform: translateX(0) translateY(0) translateZ(-40px); }
@@ -32,94 +32,218 @@
 			#message { font-weight: 600; font-size: 1rem; color: #FF4B4B; pointer-events: none; }
 			#progress { position: absolute; top: 0; height: 4px; background: #FF4B4B; z-index: 99; transition: width 0.1s ease-in-out; }
 			#caminfo { position: absolute; top: 10px; z-index: 999; right: 10px; color: rgba(250,250,250,0.5); font-size: 0.8rem;}
-			
-            #canvas { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; touch-action: none; z-index: 1;}
+			#canvas { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; touch-action: none; z-index: 1;}
 
-            /* --- STREAMLIT-STYLE SIDEBAR CSS --- */
-            .streamlit-sidebar { position: absolute; top: 0; left: 0; bottom: 0; width: 320px; background-color: #262730; color: #FAFAFA; padding: 2rem 1.5rem; z-index: 1000; overflow-y: auto; overflow-x: hidden; box-shadow: 2px 0 10px rgba(0,0,0,0.2); box-sizing: border-box; border-right: 1px solid rgba(250, 250, 250, 0.1);}
-            .sidebar-section { margin-bottom: 24px; }
-            .sidebar-section label { display: block; margin-bottom: 8px; font-weight: 400; font-size: 14px; color: #FAFAFA; }
-            .st-input { width: 100%; padding: 0.5rem 0.75rem; margin-bottom: 16px; background-color: #0E1117; color: white; border: 1px solid rgba(250, 250, 250, 0.2); border-radius: 0.5rem; box-sizing: border-box; font-family: inherit; font-size: 14px; transition: border-color 0.2s ease;}
-            .st-input:focus { outline: none; border-color: #FF4B4B; }
-            .st-button { display: block; width: 100%; padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid rgba(250, 250, 250, 0.2); background-color: #262730; color: #FAFAFA; cursor: pointer; font-weight: 400; font-size: 14px; transition: all 0.2s ease; box-sizing: border-box; margin-bottom: 8px;}
-            .st-button-primary { background-color: #FF4B4B; color: white; border-color: #FF4B4B; }
-            .st-button-primary:hover { background-color: #FF6666; border-color: #FF6666; color: white; }
-            .st-button-secondary:hover { border-color: #FF4B4B; color: #FF4B4B; }
-            .st-slider { width: 100%; margin: 10px 0 15px 0; accent-color: #FF4B4B; }
-            hr { border-top: 1px solid rgba(250, 250, 250, 0.1); border-bottom: none; margin: 24px 0; }
-            #pdfPanel { position:fixed; top:0; right:-680px; width:660px; height:100vh; background:#1a1a1e; z-index:2000; display:flex; flex-direction:column; box-shadow:-4px 0 20px rgba(0,0,0,0.5); transition:right 0.3s ease; border-left:1px solid rgba(250,250,250,0.1); }
-            #pdfPanel.open { right:0; }
-            #pdfPanelHeader { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:#262730; border-bottom:1px solid rgba(250,250,250,0.1); font-size:0.85rem; color:#ccc; flex-shrink:0; }
+			/* --- SIDEBAR --- */
+			.streamlit-sidebar {
+				position: absolute; top: 0; left: 0; bottom: 0; width: 320px;
+				background: linear-gradient(180deg, #1a1d27 0%, #1e2130 100%);
+				color: #FAFAFA; padding: 0; z-index: 1000;
+				overflow-y: auto; overflow-x: hidden;
+				box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+				box-sizing: border-box;
+				border-right: 1px solid rgba(75,144,255,0.12);
+				transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+				display: flex; flex-direction: column;
+			}
+			.streamlit-sidebar.collapsed {
+				transform: translateX(-320px);
+			}
+			.sidebar-header {
+				padding: 18px 20px 14px;
+				border-bottom: 1px solid rgba(250,250,250,0.08);
+				background: rgba(0,0,0,0.2);
+				flex-shrink: 0;
+			}
+			.sidebar-header .app-name {
+				font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+				text-transform: uppercase; color: #4B90FF; margin-bottom: 2px;
+			}
+			.sidebar-header .vehicle-name {
+				font-size: 1rem; font-weight: 600; color: #F0F4FF; line-height: 1.3;
+			}
+			.sidebar-body { padding: 16px 18px; flex: 1; }
+			.sidebar-footer {
+				padding: 12px 18px;
+				border-top: 1px solid rgba(250,250,250,0.08);
+				flex-shrink: 0;
+				display: flex; align-items: center; justify-content: flex-start;
+			}
+			.sidebar-section { margin-bottom: 20px; }
+			.section-label {
+				display: block; margin-bottom: 8px;
+				font-weight: 700; font-size: 0.65rem; letter-spacing: 0.1em;
+				text-transform: uppercase; color: #5a6a8a;
+			}
+			.st-input {
+				width: 100%; padding: 0.5rem 0.75rem; margin-bottom: 12px;
+				background-color: rgba(14,17,23,0.8); color: white;
+				border: 1px solid rgba(250,250,250,0.12); border-radius: 6px;
+				box-sizing: border-box; font-family: inherit; font-size: 14px;
+				transition: border-color 0.2s ease;
+			}
+			.st-input:focus { outline: none; border-color: #4B90FF; }
+			.st-button {
+				display: block; width: 100%; padding: 0.55rem 1rem;
+				border-radius: 6px; border: 1px solid rgba(250,250,250,0.15);
+				background-color: rgba(255,255,255,0.06); color: #FAFAFA;
+				cursor: pointer; font-weight: 500; font-size: 13.5px;
+				transition: all 0.2s ease; box-sizing: border-box; margin-bottom: 8px;
+				text-align: left;
+			}
+			.st-button:hover { background-color: rgba(255,255,255,0.1); border-color: rgba(250,250,250,0.3); }
+			.st-button-primary { background-color: #4B90FF; color: white; border-color: #4B90FF; }
+			.st-button-primary:hover { background-color: #6BAAFF; border-color: #6BAAFF; }
+			.st-button-danger { background-color: #FF4B4B; color: white; border-color: #FF4B4B; }
+			.st-button-danger:hover { background-color: #FF6666; border-color: #FF6666; }
+			.st-slider { width: 100%; margin: 8px 0 14px; accent-color: #4B90FF; }
+			hr { border-top: 1px solid rgba(250,250,250,0.08); border-bottom: none; margin: 18px 0; }
 
-            /* --- 3D ANNOTATION MARKERS --- */
-            .splat-marker { position: absolute; pointer-events: none; z-index: 500; display: none; }
-            .splat-marker.active { z-index: 600; }
-            .anchor-point {
-                position: absolute; top: 0; left: 0;
-                width: 14px; height: 14px;
-                background: #4B90FF; border: 2px solid white;
-                border-radius: 50%; transform: translate(-50%, -50%);
-                cursor: pointer; pointer-events: all;
-                box-shadow: 0 0 10px rgba(75,144,255,0.7), 0 0 0 4px rgba(75,144,255,0.2);
-                transition: transform 0.2s, box-shadow 0.2s;
-                animation: pulse-dot 2.5s infinite;
-            }
-            @keyframes pulse-dot {
-                0%,100% { box-shadow: 0 0 10px rgba(75,144,255,0.7), 0 0 0 4px rgba(75,144,255,0.2); }
-                50% { box-shadow: 0 0 14px rgba(75,144,255,0.9), 0 0 0 8px rgba(75,144,255,0.1); }
-            }
-            .anchor-point:hover { transform: translate(-50%,-50%) scale(1.4); }
-            .splat-annotation {
-                position: absolute; width: 280px;
-                background: rgba(10, 14, 22, 0.96);
-                border: 1px solid rgba(75,144,255,0.6);
-                border-radius: 10px; padding: 14px 16px;
-                pointer-events: all; cursor: default;
-                display: none;
-                box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-                backdrop-filter: blur(10px);
-            }
-            .splat-marker.active .splat-annotation { display: block; }
-            .anno-title {
-                font-size: 0.9rem; font-weight: 700; color: #4B90FF;
-                margin-bottom: 8px; padding-right: 20px; line-height: 1.3;
-            }
-            .anno-details {
-                font-size: 0.78rem; color: #C8D8F0; line-height: 1.55;
-            }
-            .anno-warning {
-                margin-top: 8px; padding: 6px 8px;
-                background: rgba(255,75,75,0.12); border-left: 3px solid #FF4B4B;
-                border-radius: 0 4px 4px 0; font-size: 0.75rem; color: #FF8888;
-                font-weight: 600;
-            }
-            .splat-annotation .close-btn {
-                position: absolute; top: 8px; right: 10px;
-                background: none; border: none; color: #64748b;
-                cursor: pointer; font-size: 11px; pointer-events: all;
-                line-height: 1;
-            }
-            .splat-annotation .close-btn:hover { color: white; }
+			/* --- Sidebar toggle button --- */
+			#sidebarToggle {
+				position: fixed; top: 50%; left: 320px;
+				transform: translateY(-50%);
+				z-index: 1001; width: 22px; height: 52px;
+				background: #1e2130; border: 1px solid rgba(75,144,255,0.25);
+				border-left: none; border-radius: 0 6px 6px 0;
+				cursor: pointer; display: flex; align-items: center; justify-content: center;
+				color: #4B90FF; font-size: 11px;
+				transition: left 0.3s cubic-bezier(0.4,0,0.2,1), background 0.2s;
+				box-shadow: 3px 0 12px rgba(0,0,0,0.4);
+			}
+			#sidebarToggle:hover { background: #263040; }
+			#sidebarToggle.collapsed { left: 0; }
 
-            /* --- WALKTHROUGH UI OVERLAY --- */
-            #tour-container { display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 500px; background: rgba(10, 14, 22, 0.97); color: #FAFAFA; padding: 20px 22px; border-radius: 14px; border: 1px solid #4B90FF; z-index: 1000; box-shadow: 0 12px 40px rgba(0,0,0,0.6); font-family: 'Source Sans Pro', sans-serif; backdrop-filter: blur(12px); }
-            #tour-container .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(250,250,250,0.12); padding-bottom: 12px; margin-bottom: 14px; gap: 10px; }
-            #tour-container h3 { margin: 0; color: #4B90FF; font-size: 1.1rem; font-weight: 700; line-height: 1.3; flex: 1; }
-            #tour-section-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; background: rgba(75,144,255,0.18); color: #6BAAFF; border: 1px solid rgba(75,144,255,0.3); white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
-            #tour-container p { margin: 0 0 10px 0; font-size: 0.88rem; line-height: 1.6; color: #C8D8F0; }
-            #tour-highlight { margin-bottom: 12px; padding: 8px 11px; background: rgba(75,144,255,0.1); border-left: 3px solid #4B90FF; border-radius: 0 6px 6px 0; font-size: 0.8rem; color: #9BBFE8; line-height: 1.5; font-style: italic; }
-            #tour-warning-box { display: none; margin-bottom: 12px; padding: 8px 11px; background: rgba(255,75,75,0.1); border-left: 3px solid #FF4B4B; border-radius: 0 6px 6px 0; font-size: 0.8rem; color: #FF8888; font-weight: 600; line-height: 1.4; }
-            #tour-container .btn-group { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
-            #tour-progress-bar { height: 3px; background: rgba(75,144,255,0.2); border-radius: 3px; margin-bottom: 14px; }
-            #tour-progress-fill { height: 100%; background: #4B90FF; border-radius: 3px; transition: width 0.4s ease; }
-            .tour-btn { flex: 1; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; font-size: 14px; transition: opacity 0.2s, background 0.2s; }
-            .tour-btn.prev { background-color: #1E2A3A; color: #94a3b8; }
-            .tour-btn.prev:not(:disabled):hover { background-color: #263548; color: white; }
-            .tour-btn.next { background-color: #4B90FF; color: white; }
-            .tour-btn.next:not(:disabled):hover { background-color: #6BAAFF; }
-            .tour-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-            #tour-counter { color: #475569; font-size: 0.8rem; white-space: nowrap; }
-            .close-tour { position: absolute; top: -10px; right: -10px; background: #1E293B; color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+			/* --- PDF panel --- */
+			#pdfPanel { position: fixed; top: 0; right: -680px; width: 660px; height: 100vh; background: #1a1a1e; z-index: 2000; display: flex; flex-direction: column; box-shadow: -4px 0 20px rgba(0,0,0,0.5); transition: right 0.3s ease; border-left: 1px solid rgba(250,250,250,0.1); }
+			#pdfPanel.open { right: 0; }
+			#pdfPanelHeader { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #262730; border-bottom: 1px solid rgba(250,250,250,0.1); font-size: 0.85rem; color: #ccc; flex-shrink: 0; }
+
+			/* --- Dev mode crosshair / marker --- */
+			#devCrosshair { display: none; position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; }
+			#devMarker { display: none; position: absolute; width: 16px; height: 16px; background: #00ff88; border: 2px solid black; border-radius: 50%; transform: translate(-50%, -50%); z-index: 101; pointer-events: none; box-shadow: 0 0 10px #00ff88; }
+
+			/* --- 3D ANNOTATION MARKERS --- */
+			.splat-marker { position: absolute; pointer-events: none; z-index: 500; display: none; }
+			.splat-marker.active { z-index: 600; }
+			.anchor-point {
+				position: absolute; top: 0; left: 0;
+				width: 14px; height: 14px;
+				background: #4B90FF; border: 2px solid white;
+				border-radius: 50%; transform: translate(-50%, -50%);
+				cursor: pointer; pointer-events: all;
+				box-shadow: 0 0 10px rgba(75,144,255,0.7), 0 0 0 4px rgba(75,144,255,0.2);
+				transition: transform 0.2s, box-shadow 0.2s;
+				animation: pulse-dot 2.5s infinite;
+			}
+			@keyframes pulse-dot {
+				0%,100% { box-shadow: 0 0 10px rgba(75,144,255,0.7), 0 0 0 4px rgba(75,144,255,0.2); }
+				50% { box-shadow: 0 0 14px rgba(75,144,255,0.9), 0 0 0 8px rgba(75,144,255,0.1); }
+			}
+			.anchor-point:hover { transform: translate(-50%,-50%) scale(1.4); }
+			.splat-annotation {
+				position: absolute; width: 286px;
+				background: rgba(8, 12, 20, 0.97);
+				border: 1px solid rgba(75,144,255,0.5);
+				border-radius: 10px; padding: 0;
+				pointer-events: all; cursor: default;
+				display: none;
+				box-shadow: 0 10px 32px rgba(0,0,0,0.7);
+				backdrop-filter: blur(12px);
+				overflow: hidden;
+			}
+			.splat-marker.active .splat-annotation { display: block; }
+			.anno-image {
+				width: 100%; height: 140px; object-fit: cover;
+				display: block; opacity: 0.9;
+			}
+			.anno-body { padding: 12px 14px 14px; }
+			.anno-title {
+				font-size: 0.88rem; font-weight: 700; color: #4B90FF;
+				margin-bottom: 6px; padding-right: 20px; line-height: 1.3;
+			}
+			.anno-details { font-size: 0.77rem; color: #B8C8E0; line-height: 1.55; }
+			.anno-warning {
+				margin-top: 8px; padding: 6px 8px;
+				background: rgba(255,75,75,0.1); border-left: 3px solid #FF4B4B;
+				border-radius: 0 4px 4px 0; font-size: 0.73rem; color: #FF8888; font-weight: 600;
+			}
+			.splat-annotation .close-btn {
+				position: absolute; top: 8px; right: 10px;
+				background: rgba(0,0,0,0.5); border: none; color: #aaa;
+				cursor: pointer; font-size: 10px; pointer-events: all;
+				border-radius: 50%; width: 18px; height: 18px;
+				display: flex; align-items: center; justify-content: center;
+				z-index: 10;
+			}
+			.splat-annotation .close-btn:hover { color: white; background: rgba(255,75,75,0.5); }
+
+			/* --- WALKTHROUGH UI OVERLAY --- */
+			#tour-container { display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 500px; background: rgba(8, 12, 20, 0.97); color: #FAFAFA; padding: 20px 22px; border-radius: 14px; border: 1px solid rgba(75,144,255,0.4); z-index: 1000; box-shadow: 0 16px 48px rgba(0,0,0,0.7); font-family: 'Source Sans Pro', sans-serif; backdrop-filter: blur(14px); }
+			#tour-container .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(250,250,250,0.1); padding-bottom: 12px; margin-bottom: 14px; gap: 10px; }
+			#tour-container h3 { margin: 0; color: #4B90FF; font-size: 1.05rem; font-weight: 700; line-height: 1.3; flex: 1; }
+			#tour-section-tag { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; background: rgba(75,144,255,0.15); color: #6BAAFF; border: 1px solid rgba(75,144,255,0.25); white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+			#tour-container p { margin: 0 0 10px 0; font-size: 0.87rem; line-height: 1.6; color: #B8C8E0; }
+			#tour-highlight { margin-bottom: 12px; padding: 8px 11px; background: rgba(75,144,255,0.08); border-left: 3px solid #4B90FF; border-radius: 0 6px 6px 0; font-size: 0.78rem; color: #9BBFE8; line-height: 1.5; font-style: italic; }
+			#tour-warning-box { display: none; margin-bottom: 12px; padding: 8px 11px; background: rgba(255,75,75,0.1); border-left: 3px solid #FF4B4B; border-radius: 0 6px 6px 0; font-size: 0.78rem; color: #FF8888; font-weight: 600; line-height: 1.4; }
+			#tour-container .btn-group { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+			#tour-progress-bar { height: 3px; background: rgba(75,144,255,0.15); border-radius: 3px; margin-bottom: 14px; }
+			#tour-progress-fill { height: 100%; background: #4B90FF; border-radius: 3px; transition: width 0.4s ease; }
+			.tour-btn { flex: 1; padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13.5px; transition: opacity 0.2s, background 0.2s; }
+			.tour-btn.prev { background-color: #1A2235; color: #94a3b8; }
+			.tour-btn.prev:not(:disabled):hover { background-color: #243050; color: white; }
+			.tour-btn.next { background-color: #4B90FF; color: white; }
+			.tour-btn.next:not(:disabled):hover { background-color: #6BAAFF; }
+			.tour-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+			#tour-counter { color: #475569; font-size: 0.78rem; white-space: nowrap; }
+			.close-tour { position: absolute; top: -10px; right: -10px; background: #1E293B; color: #94a3b8; border: 1px solid rgba(255,255,255,0.12); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+			/* --- LOCK ICON (Dev access) --- */
+			#devLockBtn {
+				background: none; border: 1px solid rgba(250,250,250,0.1); color: #4a5568;
+				border-radius: 6px; padding: 6px 10px; cursor: pointer;
+				font-size: 16px; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;
+			}
+			#devLockBtn:hover { color: #00ff88; border-color: rgba(0,255,136,0.3); background: rgba(0,255,136,0.05); }
+			#devLockBtn.unlocked { color: #00ff88; border-color: rgba(0,255,136,0.3); }
+			#devLockBtn .lock-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+
+			/* --- Password modal --- */
+			#devPasswordModal {
+				display: none; position: fixed; inset: 0; z-index: 9999;
+				background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+				align-items: center; justify-content: center;
+			}
+			#devPasswordModal.open { display: flex; }
+			.modal-box {
+				background: #1a1d27; border: 1px solid rgba(75,144,255,0.25);
+				border-radius: 12px; padding: 28px 28px 22px; width: 300px;
+				box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+			}
+			.modal-box h4 { margin: 0 0 6px; color: #F0F4FF; font-size: 1rem; }
+			.modal-box p { margin: 0 0 16px; font-size: 0.8rem; color: #5a6a8a; }
+			.modal-box input {
+				width: 100%; padding: 0.5rem 0.75rem; background: rgba(14,17,23,0.8);
+				color: white; border: 1px solid rgba(250,250,250,0.15); border-radius: 6px;
+				box-sizing: border-box; font-family: inherit; font-size: 14px; margin-bottom: 12px;
+			}
+			.modal-box input:focus { outline: none; border-color: #4B90FF; }
+			.modal-box .modal-error { font-size: 0.75rem; color: #FF6666; margin-bottom: 10px; display: none; }
+			.modal-box .modal-btns { display: flex; gap: 8px; }
+			.modal-box .modal-btns button { flex: 1; padding: 0.45rem; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+			.modal-btn-cancel { background: rgba(255,255,255,0.08); color: #94a3b8; }
+			.modal-btn-ok { background: #4B90FF; color: white; }
+
+			/* --- Dev controls panel (shown after unlock) --- */
+			#devPanel {
+				display: none; margin-top: 12px; padding: 12px;
+				background: rgba(0,255,136,0.04); border-radius: 6px;
+				border: 1px dashed rgba(0,255,136,0.2);
+			}
+			#devPanel h4 { margin: 0 0 12px; font-size: 0.85rem; color: #00ff88; }
+			#devPanel label { font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px; }
+			#devPanel .st-input { font-size: 13px; margin-bottom: 10px; }
+			#devPanel .st-button { font-size: 13px; margin-bottom: 6px; }
 		</style>
 	</head>
 	<body>
@@ -134,376 +258,438 @@
 				</div>
 			</div>
 		</div>
-		
-        <canvas id="canvas"></canvas>
 
-        <!-- PDF panel — slides in from right when .open -->
-        <div id="pdfPanel">
-            <div id="pdfPanelHeader">
-                <span>📄 Equinox EV 2024 — Emergency Response Guide</span>
-                <button onclick="document.getElementById('pdfPanel').classList.remove('open')" style="background:none;border:none;color:#ccc;font-size:1.1rem;cursor:pointer;padding:0 4px;">✖</button>
-            </div>
-            <iframe src="equinox-erg.pdf#toolbar=1" style="width:100%;flex:1;border:none;background:#222;"></iframe>
-        </div>
+		<canvas id="canvas"></canvas>
 
-        <div id="devCrosshair" style="display:none; position:absolute; top:50%; left:50%; width:24px; height:24px; transform:translate(-50%, -50%); pointer-events:none; z-index:100;">
-            <div style="position:absolute; top:11px; left:0; width:24px; height:2px; background:rgba(255, 75, 75, 0.9);"></div>
-            <div style="position:absolute; top:0; left:11px; width:2px; height:24px; background:rgba(255, 75, 75, 0.9);"></div>
-            <div style="position:absolute; top:10px; left:10px; width:4px; height:4px; background:white; border-radius:50%;"></div>
-        </div>
-        <div id="devMarker" style="display:none; position:absolute; width:16px; height:16px; background:#00ff88; border:2px solid black; border-radius:50%; transform:translate(-50%, -50%); z-index:101; pointer-events:none; box-shadow: 0 0 10px #00ff88;"></div>
+		<!-- PDF panel -->
+		<div id="pdfPanel">
+			<div id="pdfPanelHeader">
+				<span>📄 Chevrolet Equinox EV 2024 — Emergency Response Guide</span>
+				<button onclick="document.getElementById('pdfPanel').classList.remove('open')" style="background:none;border:none;color:#ccc;font-size:1.1rem;cursor:pointer;padding:0 4px;">✖</button>
+			</div>
+			<iframe src="equinox-erg.pdf#toolbar=1" style="width:100%;flex:1;border:none;background:#222;"></iframe>
+		</div>
+
+		<!-- Dev crosshair / marker -->
+		<div id="devCrosshair">
+			<div style="position:absolute;top:11px;left:0;width:24px;height:2px;background:rgba(255,75,75,0.9);"></div>
+			<div style="position:absolute;top:0;left:11px;width:2px;height:24px;background:rgba(255,75,75,0.9);"></div>
+			<div style="position:absolute;top:10px;left:10px;width:4px;height:4px;background:white;border-radius:50%;"></div>
+		</div>
+		<div id="devMarker"></div>
 
 		<div id="caminfo"><span id="camid"></span></div>
 
-        <div class="streamlit-sidebar">
-            <div class="sidebar-section">
-                <label for="cameraSelect">Select View Angle</label>
-                <select id="cameraSelect" class="st-input" onchange="changeCameraView(this.value)">
-                    <option value="" disabled selected>-- Select a View --</option>
-                </select>
-            </div>
+		<!-- Sidebar toggle -->
+		<button id="sidebarToggle" onclick="toggleSidebar()" title="Toggle sidebar">&#9664;</button>
 
-            <hr>
+		<!-- Main Sidebar -->
+		<div class="streamlit-sidebar" id="mainSidebar">
+			<div class="sidebar-header">
+				<div class="app-name">First Responder Training</div>
+				<div class="vehicle-name">Chevrolet Equinox EV</div>
+			</div>
 
-            <div class="sidebar-section">
-                <h3 style="margin-top: 0; font-size: 1.1rem; color: #e8a020;">📄 Emergency Response Guide</h3>
-                <p style="font-size: 0.82rem; color: #ccc; margin-bottom: 10px;">Chevrolet Equinox EV 2024 — First Responder Reference</p>
-                <button class="st-button" style="width:100%; margin-bottom:8px;" onclick="document.getElementById('pdfPanel').classList.toggle('open')">📖 View / Hide PDF</button>
-                <a href="equinox-erg.pdf" target="_blank" class="st-button" style="display:block; text-align:center; text-decoration:none; background:#333; color:#ccc;">⬇ Open in New Tab</a>
-            </div>
+			<div class="sidebar-body">
 
-            <hr>
+				<!-- View Angles -->
+				<div class="sidebar-section">
+					<label class="section-label" for="cameraSelect">Camera Views</label>
+					<select id="cameraSelect" class="st-input" onchange="changeCameraView(this.value)" style="margin-bottom:0;">
+						<option value="" disabled selected>— Select a View —</option>
+					</select>
+				</div>
 
-            <div class="sidebar-section">
-                <h3 style="margin-top: 0; font-size: 1.1rem; color: #4B90FF;">🎓 Guided Training Tour</h3>
-                <p style="font-size: 0.85rem; color: #ccc; margin-bottom: 15px;">Launch an interactive walkthrough of key components and diagnostics.</p>
-                <button id="startTourBtn" class="st-button" style="background-color: #4B90FF; color: white; border: none; font-weight: 600;">▶ Start Walkthrough</button>
-            </div>
+				<hr>
 
-            <hr>
+				<!-- ERG -->
+				<div class="sidebar-section">
+					<label class="section-label">Emergency Response Guide</label>
+					<p style="font-size:0.78rem;color:#6a7a9a;margin:0 0 10px;">Chevrolet Equinox EV 2024 — NFPA / NHTSA Reference</p>
+					<button class="st-button" onclick="document.getElementById('pdfPanel').classList.toggle('open')">📖 View / Hide ERG PDF</button>
+					<a href="equinox-erg.pdf" target="_blank" class="st-button" style="text-align:center;text-decoration:none;">↗ Open PDF in New Tab</a>
+				</div>
 
-            <div class="sidebar-section">
-                <h3 style="margin-top: 0; font-size: 1.1rem; color: #00ff88;">🛠️ Scene Maker (Dev)</h3>
-                
-                <label style="display:flex; align-items:center; cursor:pointer; margin-bottom: 15px;">
-                    <input type="checkbox" id="devModeToggle" style="margin-right: 8px; width: 16px; height: 16px; accent-color: #FF4B4B;">
-                    <span style="font-size: 14px; font-weight: 600;">Enable Dev Mode</span>
-                </label>
+				<hr>
 
-                <div id="devModeControls" style="display: none; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px; border: 1px dashed rgba(250, 250, 250, 0.2);">
-                    
-                    <h4 style="margin-top: 0; font-size: 1rem; color: #00ff88; border-bottom: 1px solid rgba(250, 250, 250, 0.1); padding-bottom: 4px;">📍 Create Info Point</h4>
-                    <button id="dropPinBtn" class="st-button st-button-primary">📍 Drop Pin at Crosshair</button>
-                    
-                    <div id="depthControlBlock" style="display:none; margin-top: 15px;">
-                        <label for="depthSlider">Adjust Depth: <span id="depthValText" style="color:#00ff88;">2.00</span></label>
-                        <input type="range" id="depthSlider" class="st-slider" min="0.1" max="6.0" step="0.05" value="2.0">
-                        
-                        <label>Annotation ID</label>
-                        <input type="text" id="annoId" class="st-input" value="anno-new-1">
-                        
-                        <label>Title</label>
-                        <input type="text" id="annoTitle" class="st-input" value="⚡ New Component">
-                        
-                        <label>Target URL Snippet</label>
-                        <input type="text" id="annoUrl" class="st-input" placeholder="e.g. Equinox">
-                        
-                        <button id="generatePointBtn" class="st-button st-button-primary" style="background-color:#00ff88; color:black; border-color:#00ff88;">⚙️ Generate Point JSON</button>
-                    </div>
+				<!-- Guided Tour -->
+				<div class="sidebar-section">
+					<label class="section-label">Guided Training</label>
+					<p style="font-size:0.78rem;color:#6a7a9a;margin:0 0 10px;">Interactive walkthrough of critical vehicle systems for safe emergency response.</p>
+					<button id="startTourBtn" class="st-button st-button-primary" style="font-weight:700;">▶ Start Guided Tour</button>
+				</div>
 
-                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed rgba(250, 250, 250, 0.1);">
-                        <h4 style="margin-top: 0; font-size: 1rem; color: #ffbd45; border-bottom: 1px solid rgba(250, 250, 250, 0.1); padding-bottom: 4px;">📷 Extract Camera Angle</h4>
-                        
-                        <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 4px; border: 1px solid rgba(250, 250, 250, 0.1); margin-bottom: 15px;">
-                            <label style="color: #ffbd45; font-size: 12px; margin-bottom: 6px;">1. Absolute Position (X, Y, Z)</label>
-                            <div style="display: flex; gap: 5px; margin-bottom: 15px;">
-                                <input type="number" id="tuneX" class="st-input" step="0.05" style="margin-bottom:0;" placeholder="X">
-                                <input type="number" id="tuneY" class="st-input" step="0.05" style="margin-bottom:0;" placeholder="Y">
-                                <input type="number" id="tuneZ" class="st-input" step="0.05" style="margin-bottom:0;" placeholder="Z">
-                            </div>
+			</div>
 
-                            <label style="color: #ffbd45; font-size: 12px; display: flex; justify-content: space-between; margin-bottom: 2px;">
-                                <span>2. Rotation Nudge Pad</span>
-                                <span style="color:#aaa; font-weight:normal;">Step: <span id="rotStepVal">1.0</span>°</span>
-                            </label>
-                            <input type="range" id="rotStep" class="st-slider" min="0.1" max="5.0" step="0.1" value="1.0" style="margin: 5px 0 10px 0;">
+			<!-- Footer: Dev lock -->
+			<div class="sidebar-footer">
+				<button id="devLockBtn" onclick="openDevModal()">
+					<span>🔒</span>
+					<span class="lock-label">Admin</span>
+				</button>
+			</div>
+		</div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                                <button id="tiltUpBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">⤴️ Tilt Up</button>
-                                <button id="tiltDownBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">⤵️ Tilt Down</button>
-                                <button id="panLeftBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">↺ Pan Left</button>
-                                <button id="panRightBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">↻ Pan Right</button>
-                                <button id="rollLeftBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">↶ Roll Left</button>
-                                <button id="rollRightBtn" class="st-button st-button-secondary" style="margin-bottom:0; font-size:11px;">↷ Roll Right</button>
-                            </div>
-                            
-                            <button id="centerOriginBtn" class="st-button st-button-secondary" style="margin-top: 10px; border-color: rgba(255,189,69,0.3);">🎯 Reset Camera to Start</button>
-                        </div>
+		<!-- Dev password modal -->
+		<div id="devPasswordModal">
+			<div class="modal-box">
+				<h4>🔒 Admin Access</h4>
+				<p>Enter the administrator password to access Scene Maker tools.</p>
+				<input type="password" id="devPasswordInput" placeholder="Password" onkeydown="if(event.key==='Enter')submitDevPassword()">
+				<div class="modal-error" id="devModalError">Incorrect password. Try again.</div>
+				<div class="modal-btns">
+					<button class="modal-btn-cancel" onclick="closeDevModal()">Cancel</button>
+					<button class="modal-btn-ok" onclick="submitDevPassword()">Unlock</button>
+				</div>
+			</div>
+		</div>
 
-                        <button id="generateCamBtn" class="st-button st-button-primary" style="background-color: #ffbd45; color: black; border-color:#ffbd45;">⚙️ Capture View to JSON</button>
-                    </div>
-                </div>
+		<!-- Dev panel (shown after unlock, slides below lock btn) -->
+		<div id="devFloatPanel" style="display:none; position:fixed; bottom:60px; left:10px; width:310px; max-height:70vh; overflow-y:auto; z-index:1002; background:linear-gradient(180deg,#1a1d27,#1e2130); border:1px solid rgba(0,255,136,0.25); border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,0.6); padding:16px;">
+			<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(0,255,136,0.15);padding-bottom:10px;">
+				<span style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#00ff88;">🛠 Scene Maker</span>
+				<button onclick="closeDevPanel()" style="background:none;border:none;color:#5a6a8a;cursor:pointer;font-size:12px;">✖ Close</button>
+			</div>
 
-                <textarea id="devOutputBox" rows="6" class="st-input" style="display:none; font-family: monospace; font-size: 11px; resize: vertical; margin-top: 10px;" readonly></textarea>
-                <button id="copyDevBtn" class="st-button st-button-secondary" style="display:none;">📋 Copy JSON</button>
+			<label style="display:flex;align-items:center;cursor:pointer;margin-bottom:14px;">
+				<input type="checkbox" id="devModeToggle" style="margin-right:8px;width:15px;height:15px;accent-color:#00ff88;">
+				<span style="font-size:13px;font-weight:600;color:#FAFAFA;">Enable Dev Mode</span>
+			</label>
 
-            </div>
-        </div>
+			<div id="devModeControls" style="display:none;">
+				<h4 style="margin:0 0 10px;font-size:0.85rem;color:#00ff88;border-bottom:1px solid rgba(250,250,250,0.1);padding-bottom:6px;">📍 Create Info Point</h4>
+				<button id="dropPinBtn" class="st-button st-button-primary" style="margin-bottom:8px;">📍 Drop Pin at Crosshair</button>
 
-        <!-- WALKTHROUGH UI OVERLAY -->
-        <div id="tour-container">
-            <button class="close-tour" id="closeTourBtn">✖</button>
-            <div class="header">
-                <h3 id="tour-title">Tour Loading...</h3>
-                <span id="tour-section-tag">Section</span>
-            </div>
-            <div id="tour-progress-bar"><div id="tour-progress-fill" style="width:10%"></div></div>
-            <p id="tour-description">Initializing spatial data...</p>
-            <div id="tour-highlight"></div>
-            <div id="tour-warning-box"></div>
-            <div class="btn-group">
-                <button id="tour-prev" class="tour-btn prev">◀ Previous</button>
-                <span id="tour-counter">1 / X</span>
-                <button id="tour-next" class="tour-btn next">Next ▶</button>
-            </div>
-        </div>
+				<div id="depthControlBlock" style="display:none;margin-top:12px;">
+					<label style="font-size:12px;color:#94a3b8;">Depth: <span id="depthValText" style="color:#00ff88;">2.00</span></label>
+					<input type="range" id="depthSlider" class="st-slider" min="0.1" max="6.0" step="0.05" value="2.0">
+					<label style="font-size:12px;color:#94a3b8;">Annotation ID</label>
+					<input type="text" id="annoId" class="st-input" value="anno-new-1">
+					<label style="font-size:12px;color:#94a3b8;">Title</label>
+					<input type="text" id="annoTitle" class="st-input" value="⚡ New Component">
+					<label style="font-size:12px;color:#94a3b8;">Target URL Snippet</label>
+					<input type="text" id="annoUrl" class="st-input" placeholder="e.g. EQUINOXREFINE_FINAL">
+					<button id="generatePointBtn" class="st-button" style="background:#00ff88;color:black;border:none;font-weight:700;">⚙️ Generate Point JSON</button>
+				</div>
 
-        <script src="main.js"></script>
+				<div style="margin-top:16px;padding-top:14px;border-top:1px dashed rgba(250,250,250,0.1);">
+					<h4 style="margin:0 0 10px;font-size:0.85rem;color:#ffbd45;border-bottom:1px solid rgba(250,250,250,0.1);padding-bottom:6px;">📷 Extract Camera Angle</h4>
 
-        <script>
-            const customCameras = {
-                "Equinox": [
-                    { "name": "Overview", "matrix": [0.73, 0.13, -0.67, 0, 0.1, 0.95, 0.29, 0, 0.67, -0.28, 0.68, 0, -0.02, 0.29, 2.22, 1] }
-                ],
-                "personalvehiclescan": [
-                    { "name": "Front Bumper View", "matrix": [-0.97907, -0.07085, 0.18738, 0, 0.01401, 0.90262, 0.42623, 0, -0.19595, 0.41733, -0.88156, 0, 0.324, 0.525, 4.567, 1] },
-                    { "name": "Side Profile", "matrix": [-0.49287, -0.21952, 0.84118, 0, 0.24347, 0.89136, 0.37788, 0, -0.82941, 0.38898, -0.38792, 0, 0.587, 0.564, 4.196, 1] },
-                    { "name": "Engine Bay Focus", "matrix": [-0.93494, 0.01114, -0.35281, 0, -0.14292, 0.90297, 0.40103, 0, 0.3251, 0.4225, -0.83994, 0, 0.018, 0.503, 5.755, 1] }
-                ]
-            };
+					<div style="background:rgba(0,0,0,0.2);padding:10px;border-radius:6px;border:1px solid rgba(250,250,250,0.08);margin-bottom:12px;">
+						<label style="color:#ffbd45;font-size:11px;margin-bottom:6px;display:block;">Camera Position (X, Y, Z)</label>
+						<div style="display:flex;gap:5px;margin-bottom:12px;">
+							<input type="number" id="tuneX" class="st-input" step="0.05" style="margin-bottom:0;" placeholder="X">
+							<input type="number" id="tuneY" class="st-input" step="0.05" style="margin-bottom:0;" placeholder="Y">
+							<input type="number" id="tuneZ" class="st-input" step="0.05" style="margin-bottom:0;" placeholder="Z">
+						</div>
+						<label style="color:#ffbd45;font-size:11px;display:flex;justify-content:space-between;margin-bottom:2px;">
+							<span>Rotation Nudge</span>
+							<span style="color:#aaa;font-weight:normal;">Step: <span id="rotStepVal">1.0</span>°</span>
+						</label>
+						<input type="range" id="rotStep" class="st-slider" min="0.1" max="5.0" step="0.1" value="1.0" style="margin:4px 0 10px;">
+						<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+							<button id="tiltUpBtn" class="st-button" style="margin-bottom:0;font-size:11px;">⤴ Tilt Up</button>
+							<button id="tiltDownBtn" class="st-button" style="margin-bottom:0;font-size:11px;">⤵ Tilt Down</button>
+							<button id="panLeftBtn" class="st-button" style="margin-bottom:0;font-size:11px;">↺ Pan Left</button>
+							<button id="panRightBtn" class="st-button" style="margin-bottom:0;font-size:11px;">↻ Pan Right</button>
+							<button id="rollLeftBtn" class="st-button" style="margin-bottom:0;font-size:11px;">↶ Roll Left</button>
+							<button id="rollRightBtn" class="st-button" style="margin-bottom:0;font-size:11px;">↷ Roll Right</button>
+						</div>
+						<button id="centerOriginBtn" class="st-button" style="margin-top:8px;font-size:12px;">🎯 Reset Camera</button>
+					</div>
+					<button id="generateCamBtn" class="st-button" style="background:#ffbd45;color:black;border:none;font-weight:700;">⚙️ Capture View to JSON</button>
+				</div>
+			</div>
 
-            const cameraSelect = document.getElementById('cameraSelect');
-            const EQUINOX_URL = "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Refined%20vehicle%20scans/EQUINOXREFINE_FINAL.ply";
+			<textarea id="devOutputBox" rows="5" class="st-input" style="display:none;font-family:monospace;font-size:11px;resize:vertical;margin-top:10px;" readonly></textarea>
+			<button id="copyDevBtn" class="st-button" style="display:none;">📋 Copy JSON</button>
+		</div>
 
-            (function initCameraDropdown() {
-                cameraSelect.innerHTML = '<option value="" disabled selected>-- Select a View --</option>';
-                for (let keyword in customCameras) {
-                    if (EQUINOX_URL.includes(keyword)) {
-                        customCameras[keyword].forEach(cam => {
-                            const option = document.createElement('option');
-                            option.value = JSON.stringify(cam.matrix);
-                            option.textContent = cam.name;
-                            cameraSelect.appendChild(option);
-                        });
-                    }
-                }
-            })();
+		<!-- WALKTHROUGH UI OVERLAY -->
+		<div id="tour-container">
+			<button class="close-tour" id="closeTourBtn">✖</button>
+			<div class="header">
+				<h3 id="tour-title">Tour Loading...</h3>
+				<span id="tour-section-tag">Section</span>
+			</div>
+			<div id="tour-progress-bar"><div id="tour-progress-fill" style="width:10%"></div></div>
+			<p id="tour-description">Initializing spatial data...</p>
+			<div id="tour-highlight"></div>
+			<div id="tour-warning-box"></div>
+			<div class="btn-group">
+				<button id="tour-prev" class="tour-btn prev">◀ Previous</button>
+				<span id="tour-counter">1 / 3</span>
+				<button id="tour-next" class="tour-btn next">Next ▶</button>
+			</div>
+		</div>
 
-            function populateCameraDropdown(urlStr) {
-                cameraSelect.innerHTML = '<option value="" disabled selected>-- Select a View Angle --</option>';
-                let foundMatch = false;
-                for (let keyword in customCameras) {
-                    if (urlStr.includes(keyword)) {
-                        foundMatch = true;
-                        customCameras[keyword].forEach(cam => {
-                            const option = document.createElement('option');
-                            option.value = JSON.stringify(cam.matrix);
-                            option.textContent = cam.name;
-                            cameraSelect.appendChild(option);
-                        });
-                    }
-                }
-                if (!foundMatch) cameraSelect.innerHTML = '<option value="" disabled selected>No saved views available</option>';
-            }
+		<script src="main.js"></script>
 
-            function changeCameraView(matrixStr) {
-                if(!matrixStr) return;
-                window.location.hash = encodeURIComponent(matrixStr);
-            }
+		<script>
+			// ── Camera views ──────────────────────────────────────────────────
+			const customCameras = {
+				"EQUINOXREFINE_FINAL": [
+					{ name: "Vehicle Overview", matrix: [0.87,0.11,-0.47,0,0.03,0.96,0.29,0,0.48,-0.27,0.83,0,0.75,0.83,5.19,1] },
+					{ name: "Front Bumper",     matrix: [0.99,-0.02,-0.12,0,0.02,1,0.01,0,0.12,-0.01,0.99,0,0.49,1.09,4.1,1] },
+					{ name: "Charging Port",    matrix: [0.62,0.02,-0.79,0,0.08,0.99,0.09,0,0.78,-0.11,0.61,0,0.63,1.03,3.17,1] }
+				]
+			};
 
-            // --- DEV MODE CONTROLS ---
-            const devModeToggle = document.getElementById('devModeToggle');
-            const devModeControls = document.getElementById('devModeControls');
-            const devCrosshair = document.getElementById('devCrosshair');
-            const devMarker = document.getElementById('devMarker');
-            
-            const dropPinBtn = document.getElementById('dropPinBtn');
-            const depthControlBlock = document.getElementById('depthControlBlock');
-            const depthSlider = document.getElementById('depthSlider');
-            const depthValText = document.getElementById('depthValText');
-            
-            const generatePointBtn = document.getElementById('generatePointBtn');
-            const generateCamBtn = document.getElementById('generateCamBtn');
-            const devOutputBox = document.getElementById('devOutputBox');
-            const copyDevBtn = document.getElementById('copyDevBtn');
+			const cameraSelect = document.getElementById("cameraSelect");
+			const EQUINOX_URL = "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Refined%20vehicle%20scans/EQUINOXREFINE_FINAL.ply";
 
-            let isDevMode = false;
-            let pinDropped = false;
-            let pinCamPos = [0,0,0];
-            let pinForwardVec = [0,0,0];
-            let calculatedTarget = [0,0,0];
+			(function initCameraDropdown() {
+				cameraSelect.innerHTML = '<option value="" disabled selected>— Select a View —</option>';
+				for (let keyword in customCameras) {
+					if (EQUINOX_URL.includes(keyword)) {
+						customCameras[keyword].forEach(cam => {
+							const opt = document.createElement("option");
+							opt.value = JSON.stringify(cam.matrix);
+							opt.textContent = cam.name;
+							cameraSelect.appendChild(opt);
+						});
+					}
+				}
+			})();
 
-            devModeToggle.addEventListener('change', (e) => {
-                isDevMode = e.target.checked;
-                devModeControls.style.display = isDevMode ? 'block' : 'none';
-                devCrosshair.style.display = isDevMode ? 'block' : 'none';
-                if(!isDevMode) {
-                    pinDropped = false;
-                    devMarker.style.display = 'none';
-                    depthControlBlock.style.display = 'none';
-                    devOutputBox.style.display = 'none';
-                    copyDevBtn.style.display = 'none';
-                }
-            });
+			function changeCameraView(matrixStr) {
+				if (!matrixStr) return;
+				try {
+					const m = JSON.parse(matrixStr);
+					if (typeof viewMatrix !== "undefined") viewMatrix = m;
+					window.location.hash = encodeURIComponent(matrixStr);
+				} catch(e) {}
+			}
 
-            dropPinBtn.addEventListener('click', () => {
-                if (typeof viewMatrix === 'undefined' || typeof invert4 === 'undefined') return;
-                let camWorld = invert4(viewMatrix);
-                pinCamPos = [camWorld[12], camWorld[13], camWorld[14]];
-                pinForwardVec = [-camWorld[8], -camWorld[9], -camWorld[10]];
-                depthSlider.value = 2.0; depthValText.innerText = "2.00";
-                updateCalculatedTarget();
-                pinDropped = true;
-                devMarker.style.display = 'block';
-                depthControlBlock.style.display = 'block';
-            });
+			// ── Sidebar toggle ────────────────────────────────────────────────
+			let sidebarOpen = true;
+			function toggleSidebar() {
+				const sb = document.getElementById("mainSidebar");
+				const btn = document.getElementById("sidebarToggle");
+				sidebarOpen = !sidebarOpen;
+				if (sidebarOpen) {
+					sb.classList.remove("collapsed");
+					btn.classList.remove("collapsed");
+					btn.innerHTML = "&#9664;";
+				} else {
+					sb.classList.add("collapsed");
+					btn.classList.add("collapsed");
+					btn.innerHTML = "&#9654;";
+				}
+			}
 
-            depthSlider.addEventListener('input', (e) => {
-                depthValText.innerText = parseFloat(e.target.value).toFixed(2);
-                updateCalculatedTarget();
-            });
+			// ── Dev password modal ────────────────────────────────────────────
+			function openDevModal() {
+				document.getElementById("devPasswordInput").value = "";
+				document.getElementById("devModalError").style.display = "none";
+				document.getElementById("devPasswordModal").classList.add("open");
+				setTimeout(() => document.getElementById("devPasswordInput").focus(), 80);
+			}
+			function closeDevModal() {
+				document.getElementById("devPasswordModal").classList.remove("open");
+			}
+			function submitDevPassword() {
+				const pw = document.getElementById("devPasswordInput").value;
+				if (pw === "Admin") {
+					closeDevModal();
+					openDevPanel();
+				} else {
+					document.getElementById("devModalError").style.display = "block";
+					document.getElementById("devPasswordInput").value = "";
+					document.getElementById("devPasswordInput").focus();
+				}
+			}
+			document.getElementById("devPasswordModal").addEventListener("click", (e) => {
+				if (e.target === document.getElementById("devPasswordModal")) closeDevModal();
+			});
 
-            function updateCalculatedTarget() {
-                let depth = parseFloat(depthSlider.value);
-                calculatedTarget = [
-                    pinCamPos[0] + pinForwardVec[0] * depth,
-                    pinCamPos[1] + pinForwardVec[1] * depth,
-                    pinCamPos[2] + pinForwardVec[2] * depth
-                ];
-            }
+			function openDevPanel() {
+				document.getElementById("devFloatPanel").style.display = "block";
+				const btn = document.getElementById("devLockBtn");
+				btn.classList.add("unlocked");
+				btn.innerHTML = '<span>🔓</span><span class="lock-label">Admin</span>';
+			}
+			function closeDevPanel() {
+				document.getElementById("devFloatPanel").style.display = "none";
+				const btn = document.getElementById("devLockBtn");
+				btn.classList.remove("unlocked");
+				btn.innerHTML = '<span>🔒</span><span class="lock-label">Admin</span>';
+				if (typeof isDevMode !== "undefined") {
+					isDevMode = false;
+					document.getElementById("devModeToggle").checked = false;
+					document.getElementById("devModeControls").style.display = "none";
+					document.getElementById("devCrosshair").style.display = "none";
+				}
+			}
 
-            function renderDevModeLoop() {
-                if (isDevMode && typeof viewMatrix !== 'undefined' && typeof invert4 !== 'undefined') {
-                    const activeElem = document.activeElement;
-                    const tuneX = document.getElementById('tuneX');
-                    const tuneY = document.getElementById('tuneY');
-                    const tuneZ = document.getElementById('tuneZ');
-                    
-                    if (activeElem !== tuneX && activeElem !== tuneY && activeElem !== tuneZ) {
-                        let inv = invert4(viewMatrix);
-                        tuneX.value = inv[12].toFixed(2);
-                        tuneY.value = inv[13].toFixed(2);
-                        tuneZ.value = inv[14].toFixed(2);
-                    }
+			// ── Dev mode controls ─────────────────────────────────────────────
+			const devModeToggle = document.getElementById("devModeToggle");
+			const devModeControls = document.getElementById("devModeControls");
+			const devCrosshair = document.getElementById("devCrosshair");
+			const devMarker = document.getElementById("devMarker");
+			const dropPinBtn = document.getElementById("dropPinBtn");
+			const depthControlBlock = document.getElementById("depthControlBlock");
+			const depthSlider = document.getElementById("depthSlider");
+			const depthValText = document.getElementById("depthValText");
+			const generatePointBtn = document.getElementById("generatePointBtn");
+			const generateCamBtn = document.getElementById("generateCamBtn");
+			const devOutputBox = document.getElementById("devOutputBox");
+			const copyDevBtn = document.getElementById("copyDevBtn");
 
-                    if (pinDropped && typeof camera !== 'undefined' && typeof getProjectionMatrix !== 'undefined') {
-                        let proj = getProjectionMatrix(camera.fx, camera.fy, innerWidth, innerHeight);
-                        let viewProj = multiply4(proj, viewMatrix); 
-                        let clipSpace = multiplyMatrixAndPoint(viewProj, calculatedTarget);
-                        let w = clipSpace[3];
-                        if (w > 0.1) {
-                            let ndcX = clipSpace[0] / w; let ndcY = clipSpace[1] / w;
-                            if (ndcX >= -1.2 && ndcX <= 1.2 && ndcY >= -1.2 && ndcY <= 1.2) {
-                                devMarker.style.display = 'block';
-                                devMarker.style.left = ((ndcX * 0.5 + 0.5) * innerWidth) + 'px';
-                                devMarker.style.top = (-(ndcY * 0.5 - 0.5) * innerHeight) + 'px';
-                            } else devMarker.style.display = 'none';
-                        } else devMarker.style.display = 'none';
-                    }
-                }
-                requestAnimationFrame(renderDevModeLoop);
-            }
-            requestAnimationFrame(renderDevModeLoop);
+			let isDevMode = false;
+			let pinDropped = false;
+			let pinCamPos = [0,0,0];
+			let pinForwardVec = [0,0,0];
+			let calculatedTarget = [0,0,0];
 
-            function updateMatrixFromXYZ() {
-                if (typeof viewMatrix === 'undefined' || typeof invert4 === 'undefined') return;
-                let inv = invert4(viewMatrix);
-                inv[12] = parseFloat(document.getElementById('tuneX').value) || 0;
-                inv[13] = parseFloat(document.getElementById('tuneY').value) || 0;
-                inv[14] = parseFloat(document.getElementById('tuneZ').value) || 0;
-                viewMatrix = invert4(inv);
-            }
-            document.getElementById('tuneX').addEventListener('input', updateMatrixFromXYZ);
-            document.getElementById('tuneY').addEventListener('input', updateMatrixFromXYZ);
-            document.getElementById('tuneZ').addEventListener('input', updateMatrixFromXYZ);
+			devModeToggle.addEventListener("change", (e) => {
+				isDevMode = e.target.checked;
+				devModeControls.style.display = isDevMode ? "block" : "none";
+				devCrosshair.style.display = isDevMode ? "block" : "none";
+				if (!isDevMode) {
+					pinDropped = false;
+					devMarker.style.display = "none";
+					depthControlBlock.style.display = "none";
+					devOutputBox.style.display = "none";
+					copyDevBtn.style.display = "none";
+				}
+			});
 
-            const rotStepSlider = document.getElementById('rotStep');
-            const rotStepVal = document.getElementById('rotStepVal');
-            
-            rotStepSlider.addEventListener('input', (e) => {
-                rotStepVal.innerText = parseFloat(e.target.value).toFixed(1);
-            });
+			dropPinBtn.addEventListener("click", () => {
+				if (typeof viewMatrix === "undefined" || typeof invert4 === "undefined") return;
+				let camWorld = invert4(viewMatrix);
+				pinCamPos = [camWorld[12], camWorld[13], camWorld[14]];
+				pinForwardVec = [-camWorld[8], -camWorld[9], -camWorld[10]];
+				depthSlider.value = 2.0; depthValText.innerText = "2.00";
+				updateCalculatedTarget();
+				pinDropped = true;
+				devMarker.style.display = "block";
+				depthControlBlock.style.display = "block";
+			});
 
-            function nudgeRotation(axisX, axisY, axisZ, direction) {
-                if (typeof viewMatrix === 'undefined' || typeof invert4 === 'undefined' || typeof rotate4 === 'undefined') return;
-                let step = parseFloat(rotStepSlider.value) * (Math.PI / 180) * direction;
-                let inv = invert4(viewMatrix);
-                inv = rotate4(inv, step, axisX, axisY, axisZ);
-                viewMatrix = invert4(inv);
-            }
+			depthSlider.addEventListener("input", (e) => {
+				depthValText.innerText = parseFloat(e.target.value).toFixed(2);
+				updateCalculatedTarget();
+			});
 
-            document.getElementById('tiltUpBtn').onclick = () => nudgeRotation(1, 0, 0, -1);
-            document.getElementById('tiltDownBtn').onclick = () => nudgeRotation(1, 0, 0, 1);
-            document.getElementById('panLeftBtn').onclick = () => nudgeRotation(0, 1, 0, -1);
-            document.getElementById('panRightBtn').onclick = () => nudgeRotation(0, 1, 0, 1);
-            document.getElementById('rollLeftBtn').onclick = () => nudgeRotation(0, 0, 1, -1);
-            document.getElementById('rollRightBtn').onclick = () => nudgeRotation(0, 0, 1, 1);
+			function updateCalculatedTarget() {
+				let depth = parseFloat(depthSlider.value);
+				calculatedTarget = [
+					pinCamPos[0] + pinForwardVec[0] * depth,
+					pinCamPos[1] + pinForwardVec[1] * depth,
+					pinCamPos[2] + pinForwardVec[2] * depth
+				];
+			}
 
-            document.getElementById('centerOriginBtn').onclick = () => {
-                if(typeof defaultViewMatrix !== 'undefined') viewMatrix = defaultViewMatrix;
-            };
+			function renderDevModeLoop() {
+				if (isDevMode && typeof viewMatrix !== "undefined" && typeof invert4 !== "undefined") {
+					const tuneX = document.getElementById("tuneX");
+					const tuneY = document.getElementById("tuneY");
+					const tuneZ = document.getElementById("tuneZ");
+					const active = document.activeElement;
+					if (active !== tuneX && active !== tuneY && active !== tuneZ) {
+						let inv = invert4(viewMatrix);
+						tuneX.value = inv[12].toFixed(2);
+						tuneY.value = inv[13].toFixed(2);
+						tuneZ.value = inv[14].toFixed(2);
+					}
+					if (pinDropped && typeof camera !== "undefined" && typeof getProjectionMatrix !== "undefined") {
+						let proj = getProjectionMatrix(camera.fx, camera.fy, innerWidth, innerHeight);
+						let viewProj = multiply4(proj, viewMatrix);
+						let clipSpace = multiplyMatrixAndPoint(viewProj, calculatedTarget);
+						let w = clipSpace[3];
+						if (w > 0.1) {
+							let ndcX = clipSpace[0] / w, ndcY = clipSpace[1] / w;
+							if (ndcX >= -1.2 && ndcX <= 1.2 && ndcY >= -1.2 && ndcY <= 1.2) {
+								devMarker.style.display = "block";
+								devMarker.style.left = ((ndcX * 0.5 + 0.5) * innerWidth) + "px";
+								devMarker.style.top = (-(ndcY * 0.5 - 0.5) * innerHeight) + "px";
+							} else devMarker.style.display = "none";
+						} else devMarker.style.display = "none";
+					}
+				}
+				requestAnimationFrame(renderDevModeLoop);
+			}
+			requestAnimationFrame(renderDevModeLoop);
 
-            generatePointBtn.addEventListener('click', () => {
-                const roundedPos = calculatedTarget.map(v => Math.round(v * 100) / 100);
-                const finalJson = {
-                    id: document.getElementById('annoId').value || "anno-new",
-                    position: roundedPos,
-                    title: document.getElementById('annoTitle').value,
-                    description: "Description text goes here.",
-                    targetUrlSnippet: document.getElementById('annoUrl').value
-                };
-                devOutputBox.value = JSON.stringify(finalJson, null, 4) + ",";
-                devOutputBox.style.display = 'block';
-                copyDevBtn.style.display = 'block';
-            });
+			function updateMatrixFromXYZ() {
+				if (typeof viewMatrix === "undefined" || typeof invert4 === "undefined") return;
+				let inv = invert4(viewMatrix);
+				inv[12] = parseFloat(document.getElementById("tuneX").value) || 0;
+				inv[13] = parseFloat(document.getElementById("tuneY").value) || 0;
+				inv[14] = parseFloat(document.getElementById("tuneZ").value) || 0;
+				viewMatrix = invert4(inv);
+			}
+			document.getElementById("tuneX").addEventListener("input", updateMatrixFromXYZ);
+			document.getElementById("tuneY").addEventListener("input", updateMatrixFromXYZ);
+			document.getElementById("tuneZ").addEventListener("input", updateMatrixFromXYZ);
 
-            generateCamBtn.addEventListener('click', () => {
-                if (typeof viewMatrix !== 'undefined' && typeof invert4 !== 'undefined') {
-                    let inv = invert4(viewMatrix);
-                    let pos = [inv[12], inv[13], inv[14]];
-                    let rot = [
-                        [viewMatrix[0], viewMatrix[1], viewMatrix[2]],
-                        [viewMatrix[4], viewMatrix[5], viewMatrix[6]],
-                        [viewMatrix[8], viewMatrix[9], viewMatrix[10]]
-                    ];
-                    const cleanPos = pos.map(n => Math.round(n * 1000) / 1000);
-                    const cleanRot = rot.map(row => row.map(n => Math.round(n * 100000) / 100000));
-                    const camJson = {
-                        id: 99,
-                        img_name: "custom_dev_view",
-                        width: 1959,
-                        height: 1090,
-                        position: cleanPos,
-                        rotation: cleanRot,
-                        fy: 1164.6601,
-                        fx: 1159.5880
-                    };
-                    devOutputBox.value = JSON.stringify(camJson, null, 4) + ",";
-                    devOutputBox.style.display = 'block';
-                    copyDevBtn.style.display = 'block';
-                }
-            });
+			const rotStepSlider = document.getElementById("rotStep");
+			const rotStepVal = document.getElementById("rotStepVal");
+			rotStepSlider.addEventListener("input", (e) => {
+				rotStepVal.innerText = parseFloat(e.target.value).toFixed(1);
+			});
 
-            copyDevBtn.addEventListener('click', () => {
-                if(devOutputBox.value) {
-                    navigator.clipboard.writeText(devOutputBox.value).then(() => {
-                        const originalText = copyDevBtn.innerText;
-                        copyDevBtn.innerText = "✅ Copied to Clipboard!";
-                        copyDevBtn.style.borderColor = "#4CAF50"; copyDevBtn.style.color = "#4CAF50";
-                        setTimeout(() => { copyDevBtn.innerText = originalText; copyDevBtn.style.borderColor = "rgba(250, 250, 250, 0.2)"; copyDevBtn.style.color = "#FAFAFA"; }, 2000);
-                    });
-                }
-            });
-        </script>
+			function nudgeRotation(ax, ay, az, dir) {
+				if (typeof viewMatrix === "undefined" || typeof invert4 === "undefined" || typeof rotate4 === "undefined") return;
+				let step = parseFloat(rotStepSlider.value) * (Math.PI / 180) * dir;
+				let inv = invert4(viewMatrix);
+				inv = rotate4(inv, step, ax, ay, az);
+				viewMatrix = invert4(inv);
+			}
+
+			document.getElementById("tiltUpBtn").onclick = () => nudgeRotation(1,0,0,-1);
+			document.getElementById("tiltDownBtn").onclick = () => nudgeRotation(1,0,0,1);
+			document.getElementById("panLeftBtn").onclick = () => nudgeRotation(0,1,0,-1);
+			document.getElementById("panRightBtn").onclick = () => nudgeRotation(0,1,0,1);
+			document.getElementById("rollLeftBtn").onclick = () => nudgeRotation(0,0,1,-1);
+			document.getElementById("rollRightBtn").onclick = () => nudgeRotation(0,0,1,1);
+			document.getElementById("centerOriginBtn").onclick = () => {
+				if (typeof defaultViewMatrix !== "undefined") viewMatrix = defaultViewMatrix;
+			};
+
+			generatePointBtn.addEventListener("click", () => {
+				const roundedPos = calculatedTarget.map(v => Math.round(v * 100) / 100);
+				devOutputBox.value = JSON.stringify({
+					id: document.getElementById("annoId").value || "anno-new",
+					position: roundedPos,
+					title: document.getElementById("annoTitle").value,
+					description: "Description text goes here.",
+					targetUrlSnippet: document.getElementById("annoUrl").value
+				}, null, 4) + ",";
+				devOutputBox.style.display = "block";
+				copyDevBtn.style.display = "block";
+			});
+
+			generateCamBtn.addEventListener("click", () => {
+				if (typeof viewMatrix !== "undefined" && typeof invert4 !== "undefined") {
+					let inv = invert4(viewMatrix);
+					devOutputBox.value = JSON.stringify({
+						id: 99, img_name: "custom_dev_view",
+						width: 1959, height: 1090,
+						position: [inv[12], inv[13], inv[14]].map(n => Math.round(n * 1000) / 1000),
+						rotation: [
+							[viewMatrix[0], viewMatrix[1], viewMatrix[2]],
+							[viewMatrix[4], viewMatrix[5], viewMatrix[6]],
+							[viewMatrix[8], viewMatrix[9], viewMatrix[10]]
+						].map(row => row.map(n => Math.round(n * 100000) / 100000)),
+						fy: 1164.6601, fx: 1159.5880
+					}, null, 4) + ",";
+					devOutputBox.style.display = "block";
+					copyDevBtn.style.display = "block";
+				}
+			});
+
+			copyDevBtn.addEventListener("click", () => {
+				if (devOutputBox.value) {
+					navigator.clipboard.writeText(devOutputBox.value).then(() => {
+						const orig = copyDevBtn.innerText;
+						copyDevBtn.innerText = "✅ Copied!";
+						copyDevBtn.style.color = "#4CAF50";
+						setTimeout(() => { copyDevBtn.innerText = orig; copyDevBtn.style.color = ""; }, 2000);
+					});
+				}
+			});
+		</script>
 	</body>
 </html>
