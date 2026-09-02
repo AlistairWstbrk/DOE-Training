@@ -508,11 +508,8 @@ async function main() {
     let carousel = true; const params = new URLSearchParams(location.search);
     try { viewMatrix = JSON.parse(decodeURIComponent(location.hash.slice(1))); carousel = false; } catch (err) {}
     
-    const urlParam = params.get("url");
-    if (!urlParam) {
-        document.getElementById("spinner").style.display = "none";
-        const msg = document.getElementById("message"); msg.innerText = "Please select a vehicle scan from the menu."; msg.style.color = "white"; msg.style.background = "rgba(0,0,0,0.5)"; msg.style.padding = "20px"; msg.style.borderRadius = "10px"; return; 
-    }
+    const EQUINOX_URL = "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Refined%20vehicle%20scans/EQUINOXREFINE_FINAL.ply";
+    const urlParam = params.get("url") || EQUINOX_URL;
 
     const decodedUrlParam = decodeURIComponent(urlParam);
     const decodedUrlLower = decodedUrlParam.toLowerCase();
@@ -717,7 +714,7 @@ async function main() {
 
     // ── Background gradient program ────────────────────────────────────────────
     const bgVS = `#version 300 es\nin vec2 a;\nout vec2 vP;\nvoid main(){vP=a;gl_Position=vec4(a,0.9999,1.);}`.trim();
-    const bgFS = `#version 300 es\nprecision highp float;\nin vec2 vP;out vec4 o;\nvoid main(){float t=vP.y*.5+.5;vec3 top=vec3(.07,.09,.14),bot=vec3(.16,.16,.18);o=vec4(mix(bot,top,smoothstep(0.,.7,t)),1.);}`.trim();
+    const bgFS = `#version 300 es\nprecision highp float;\nin vec2 vP;out vec4 o;\nvoid main(){float t=vP.y*.5+.5;vec3 top=vec3(.07,.09,.14),bot=vec3(.16,.16,.18);o=vec4(mix(bot,top,smoothstep(0.,.7,t)),0.);}`.trim();
     const bgProg = gl.createProgram();
     { const v=gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(v,bgVS); gl.compileShader(v); const f=gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(f,bgFS); gl.compileShader(f); gl.attachShader(bgProg,v); gl.attachShader(bgProg,f); gl.linkProgram(bgProg); }
     const bgBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,1,1,-1,1]), gl.STATIC_DRAW);
@@ -967,8 +964,7 @@ void main(){
         let actualViewMatrix = viewMatrix;
         const viewProj = multiply4(projectionMatrix, actualViewMatrix);
         worker.postMessage({ view: viewProj });
-        // Update camera world position for SH evaluation (extracted from view matrix)
-        { const m = actualViewMatrix; gl.uniform3fv(u_campos, new Float32Array([-(m[0]*m[12]+m[1]*m[13]+m[2]*m[14]), -(m[4]*m[12]+m[5]*m[13]+m[6]*m[14]), -(m[8]*m[12]+m[9]*m[13]+m[10]*m[14])])); }
+
 
         // --- UPDATE ANNOTATION PIN POSITIONS ---
         activeAnnotations.forEach(anno => {
@@ -1011,6 +1007,7 @@ void main(){
             gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer); gl.vertexAttribIPointer(a_index, 1, gl.INT, false, 0, 0);
             gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.ONE, gl.ONE_MINUS_DST_ALPHA, gl.ONE);
             gl.uniformMatrix4fv(u_view, false, actualViewMatrix);
+            { const m = actualViewMatrix; gl.uniform3fv(u_campos, new Float32Array([-(m[0]*m[12]+m[1]*m[13]+m[2]*m[14]), -(m[4]*m[12]+m[5]*m[13]+m[6]*m[14]), -(m[8]*m[12]+m[9]*m[13]+m[10]*m[14])])); }
             gl.drawArraysInstanced(gl.TRIANGLE_FAN, 0, 4, vertexCount);
 
             // 3. Floor plane (fills through sparse/hollow areas)

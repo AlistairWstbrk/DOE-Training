@@ -151,19 +151,9 @@
 
         <div class="streamlit-sidebar">
             <div class="sidebar-section">
-                <label for="categorySelect">Filter by Type</label>
-                <select id="categorySelect" class="st-input">
-                    <option value="" disabled selected>Loading...</option>
-                </select>
-
-                <label for="modelSelect">Select Scan</label>
-                <select id="modelSelect" class="st-input" onchange="changeModel(this.value)">
-                    <option value="" disabled selected>-- Select a Type first --</option>
-                </select>
-
-                <label for="cameraSelect" style="margin-top: 8px;">Select View Angle</label>
+                <label for="cameraSelect">Select View Angle</label>
                 <select id="cameraSelect" class="st-input" onchange="changeCameraView(this.value)">
-                    <option value="" disabled selected>-- Select a Scan first --</option>
+                    <option value="" disabled selected>-- Select a View --</option>
                 </select>
             </div>
 
@@ -277,45 +267,22 @@
                 ]
             };
 
-            let allModels = [];
-            const categorySelect = document.getElementById('categorySelect');
-            const modelSelect = document.getElementById('modelSelect');
             const cameraSelect = document.getElementById('cameraSelect');
+            const EQUINOX_URL = "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Refined%20vehicle%20scans/EQUINOXREFINE_FINAL.ply";
 
-            fetch('models.json')
-                .then(response => { if (!response.ok) throw new Error("Could not find models.json"); return response.json(); })
-                .then(data => { allModels = data; initializeMenu(); })
-                .catch(error => { console.error('Error:', error); categorySelect.innerHTML = '<option disabled>Error loading data</option>'; });
-
-            function initializeMenu() {
-                const categories = [...new Set(allModels.map(item => item.category || "Uncategorized"))];
-                categorySelect.innerHTML = '<option value="" disabled selected>-- Select Type --</option>';
-                categories.forEach(cat => { const option = document.createElement('option'); option.value = cat; option.textContent = cat; categorySelect.appendChild(option); });
-                categorySelect.addEventListener('change', (e) => updateModelDropdown(e.target.value));
-                checkPersistence();
-            }
-
-            function updateModelDropdown(selectedCategory) {
-                const filteredModels = allModels.filter(m => (m.category || "Uncategorized") === selectedCategory);
-                modelSelect.innerHTML = '<option value="" disabled selected>-- Choose a Scan --</option>';
-                cameraSelect.innerHTML = '<option value="" disabled selected>-- Select a Scan first --</option>';
-                filteredModels.forEach(model => { const option = document.createElement('option'); option.value = model.url; option.textContent = model.name; modelSelect.appendChild(option); });
-            }
-
-            function changeModel(url) { window.location.search = '?url=' + url; }
-
-            function checkPersistence() {
-                const rawUrl = new URLSearchParams(window.location.search).get('url');
-                if (rawUrl) {
-                    const currentUrlDecoded = decodeURIComponent(rawUrl).trim();
-                    const matchedModel = allModels.find(m => decodeURIComponent(m.url).trim() === currentUrlDecoded);
-                    if (matchedModel) {
-                        const cat = matchedModel.category || "Uncategorized";
-                        categorySelect.value = cat; updateModelDropdown(cat); modelSelect.value = matchedModel.url;
-                        populateCameraDropdown(currentUrlDecoded);
+            (function initCameraDropdown() {
+                cameraSelect.innerHTML = '<option value="" disabled selected>-- Select a View --</option>';
+                for (let keyword in customCameras) {
+                    if (EQUINOX_URL.includes(keyword)) {
+                        customCameras[keyword].forEach(cam => {
+                            const option = document.createElement('option');
+                            option.value = JSON.stringify(cam.matrix);
+                            option.textContent = cam.name;
+                            cameraSelect.appendChild(option);
+                        });
                     }
                 }
-            }
+            })();
 
             function populateCameraDropdown(urlStr) {
                 cameraSelect.innerHTML = '<option value="" disabled selected>-- Select a View Angle --</option>';
