@@ -160,6 +160,72 @@ let viewMatrix = defaultViewMatrix;
 function posToMatrix(x, y, z) { return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -x, -y, -z, 1]; }
 
 const tourDatabase = {
+    "enginebay": [
+        {
+            title: "🔍 Engine Bay — Safety Overview",
+            section: "Step 1 of 8 — Entry Assessment",
+            description: "Before approaching the open engine bay of the Equinox EV, confirm the vehicle is in PARK and the EPB is engaged. The hood release is a handle on the lower left of the instrument panel.\n\nNote: This is an ALL-ELECTRIC vehicle — there is no combustion engine. The bay holds the drive unit, HV wiring, thermal management system, and the 12V auxiliary battery.",
+            highlight: "⚠️ The vehicle can be SILENT and still have live HV systems. Always assume orange cables are energized. Wear full PPE.",
+            warning: null,
+            matrix: defaultViewMatrix
+        },
+        {
+            title: "⚡ Drive Unit & Inverter",
+            section: "Step 2 of 8 — Main Powerplant",
+            description: "The drive unit (electric motor + inverter) dominates the front of the engine bay. It is the primary propulsion component and contains high-voltage windings.\n\nThe inverter converts DC battery power to 3-phase AC for the motor. High-voltage orange cables connect the inverter to the HV battery running through the floor.",
+            highlight: "The drive unit enclosure is sealed — do NOT puncture or cut it. Treat the entire assembly as energized until the HV system is confirmed isolated.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            matrix: posToMatrix(0.0, 0.15, 0.2)
+        },
+        {
+            title: "🔋 12V Auxiliary Battery",
+            section: "Step 3 of 8 — Low Voltage System",
+            description: "The 12V lead-acid auxiliary battery is located in the front engine bay, typically on the right side (passenger side). It powers conventional low-voltage systems: lights, infotainment, power windows, and critically — the HV contactors.\n\nCutting the 12V system: double-cut the LV cable on BOTH sides of the yellow tape. Remove the cut section entirely.",
+            highlight: "Cutting 12V disables: airbag system + HV contactors simultaneously. Wait 10 sec (airbags) then 1 min (HV discharge) before working near those systems.",
+            warning: "NEVER cut 12V during active thermal runaway ('Battery Danger Detected') — it will disable the battery cooling system.",
+            matrix: posToMatrix(0.9, 0.18, 0.3)
+        },
+        {
+            title: "🟠 HV Junction Box / PDU",
+            section: "Step 4 of 8 — High Voltage Wiring",
+            description: "The High Voltage Junction Box (Power Distribution Unit) routes orange HV cables between the battery pack, drive unit, and onboard charger. Multiple orange cables converge here.\n\nHV battery warning label is under the center front compartment sight shield on the air inlet grill panel.",
+            highlight: "All orange cables in this zone are 400V+ DC. The HV system remains energized when the vehicle is OFF — it only de-energizes after a full LV disable procedure.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            matrix: posToMatrix(-0.3, 0.12, 0.5)
+        },
+        {
+            title: "🔴 Manual Service Disconnect (MSD)",
+            section: "Step 5 of 8 — Emergency Isolation",
+            description: "The Manual Service Disconnect isolates the HV battery mid-pack, creating a physical break in the high-voltage circuit. On the Equinox EV, it is accessible from the front compartment area.\n\nTo use: lift the MSD cover and pull upward on the plug. This mechanically opens the HV circuit. After removal, wait 1 minute for capacitors to discharge.",
+            highlight: "MSD removal alone does NOT disable airbags — also perform the LV cable cut and wait 10 seconds before working near deployment zones.",
+            warning: "After MSD removal: assume residual HV charge for at least 60 seconds.",
+            matrix: posToMatrix(-0.6, 0.10, 0.0)
+        },
+        {
+            title: "🌡️ Thermal Management / Coolant",
+            section: "Step 6 of 8 — Cooling System",
+            description: "The Equinox EV has a liquid cooling system for the HV battery and drive unit. The coolant reservoir is visible in the engine bay. During thermal runaway, this system activates automatically if low voltage power is present.\n\nBright-colored (typically orange or pink) HV-safe coolant is used — do NOT confuse coolant hoses with HV cables.",
+            highlight: "Do NOT cut coolant lines. A rupture during a thermal event releases hot, pressurized liquid near energized HV components.",
+            warning: null,
+            matrix: posToMatrix(-1.0, 0.15, 0.5)
+        },
+        {
+            title: "📡 Airbag Sensor & DERM Module",
+            section: "Step 7 of 8 — Restraint System",
+            description: "Front impact sensors and the Diagnostic Energy Reserve Module (DERM) are located in the engine bay. The DERM stores reserve energy for airbag deployment even if the 12V battery is cut.\n\nThe Equinox EV has 8 airbags total. After LV cut, the DERM reserve allows deployment for approximately 10 seconds — do NOT work in front airbag zones during this window.",
+            highlight: "After cutting LV cables: DO NOT position yourself in front of the steering wheel or instrument panel for at least 10 seconds.",
+            warning: null,
+            matrix: posToMatrix(0.0, 0.05, -0.5)
+        },
+        {
+            title: "✅ Engine Bay Safety Checklist",
+            section: "Step 8 of 8 — Pre-Work Verification",
+            description: "Before any extrication or cutting operations:\n\n1️⃣ Vehicle in PARK, EPB engaged, wheels blocked\n2️⃣ Charging cable removed (if connected)\n3️⃣ MSD pulled (if accessible)\n4️⃣ LV cable double-cut both sides of yellow tape — section removed\n5️⃣ Waited 10 seconds (airbag reserve) ✓\n6️⃣ Waited 60 seconds (HV capacitor discharge) ✓\n7️⃣ Confirmed NO orange cable was cut ✓\n8️⃣ SCBA on if any smoke or odor is present",
+            highlight: "If 'Battery Danger Detected' is active: skip Step 4 unless extrication absolutely requires airbag disablement.",
+            warning: "Always wear Self-Contained Breathing Apparatus (SCBA) if battery fumes or smoke are present.",
+            matrix: defaultViewMatrix
+        }
+    ],
     "Equinox": [
         {
             title: "🔍 EV Identification & PPE",
@@ -365,6 +431,47 @@ async function main() {
             description: "If the vehicle is connected to a charge station: remove the charge handle from the vehicle first. Consider also terminating power at the charging station.\n\nCommon handle disconnects normally. DC Fast Charge handle is larger and may require additional effort to disconnect.",
             warning: "Disconnecting may trigger the vehicle's anti-theft alarm.",
             targetUrlSnippet: "Equinox EV (Hood Closed)"
+        },
+        // --- Engine Bay Merged Scan Annotations ---
+        {
+            id: "EB_DriveUnit",
+            position: [0.0, 0.1, 0.2],
+            title: "⚡ Drive Unit (Motor + Inverter)",
+            description: "The electric drive unit occupies most of the engine bay. Contains the 3-phase AC motor and inverter module. Orange HV cables connect to the HV battery pack beneath the vehicle floor.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            targetUrlSnippet: "enginebay_merged"
+        },
+        {
+            id: "EB_12VBattery",
+            position: [0.9, 0.15, 0.3],
+            title: "🔋 12V Auxiliary Battery",
+            description: "Lead-acid 12V battery powering conventional systems and — critically — the HV contactors. Double-cut LV cable on BOTH sides of yellow tape to disable HV contactors and airbags.\n\nWait 10 sec (airbags) then 60 sec (HV discharge).",
+            warning: "NEVER cut 12V during active thermal runaway mitigation.",
+            targetUrlSnippet: "enginebay_merged"
+        },
+        {
+            id: "EB_HVJunction",
+            position: [-0.3, 0.12, 0.5],
+            title: "🟠 HV Junction Box",
+            description: "Routes 400V+ DC power between battery, drive unit, and onboard charger. All orange cables in this zone are energized even with the vehicle off.\n\nHV warning label is on the air inlet grill center panel.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            targetUrlSnippet: "enginebay_merged"
+        },
+        {
+            id: "EB_MSD",
+            position: [-0.6, 0.08, 0.0],
+            title: "🔴 Manual Service Disconnect",
+            description: "Physically isolates HV battery mid-pack. Lift the MSD cover and pull upward to remove the plug — this mechanically breaks the HV circuit.\n\nAfter MSD removal: wait 60 seconds for capacitor discharge before any work near HV components.",
+            warning: "MSD alone does NOT disable airbags. Also perform LV cable cut.",
+            targetUrlSnippet: "enginebay_merged"
+        },
+        {
+            id: "EB_Coolant",
+            position: [-1.0, 0.15, 0.5],
+            title: "🌡️ Thermal Management Coolant",
+            description: "Liquid cooling system for HV battery and drive unit. Activates automatically during thermal runaway if 12V power is present.\n\nDo NOT cut coolant hoses — do not confuse them with HV cables.",
+            warning: null,
+            targetUrlSnippet: "enginebay_merged"
         }
     ];
 
