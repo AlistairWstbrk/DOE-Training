@@ -54,7 +54,11 @@ function multiplyMatrixAndPoint(matrix, point) {
 }
 
 function createWorker(self) {
-    let buffer; let vertexCount = 0; let viewProj; const rowLength = 3*4+3*4+4+4; let lastProj = []; let depthIndex = new Uint32Array(); let lastVertexCount = 0;
+    let buffer; let vertexCount = 0; let viewProj;
+    const SPLAT_ROWLEN = 3*4+3*4+4+4; // 32 bytes — raw .splat binary format
+    const PLY_ROWLEN = SPLAT_ROWLEN + 45*4; // 212 bytes — PLY with SH rest coefficients
+    let rowLength = SPLAT_ROWLEN; let floatsPerRow = 8; let hasSH = false;
+    let lastProj = []; let depthIndex = new Uint32Array(); let lastVertexCount = 0;
     var _floatView = new Float32Array(1); var _int32View = new Int32Array(_floatView.buffer);
     function floatToHalf(float) {
         _floatView[0] = float; var f = _int32View[0]; var sign = (f >> 31) & 0x0001; var exp = (f >> 23) & 0x00ff; var frac = f & 0x007fffff; var newExp;
@@ -64,24 +68,40 @@ function createWorker(self) {
     function packHalf2x16(x, y) { return (floatToHalf(x) | (floatToHalf(y) << 16)) >>> 0; }
 
     function generateTexture() {
-        if (!buffer) return; const f_buffer = new Float32Array(buffer); const u_buffer = new Uint8Array(buffer);
+        if (!buffer) return;
+        const f_buffer = new Float32Array(buffer); const u_buffer = new Uint8Array(buffer);
         var texwidth = 1024 * 2; var texheight = Math.ceil((2 * vertexCount) / texwidth); var texdata = new Uint32Array(texwidth * texheight * 4); var texdata_c = new Uint8Array(texdata.buffer); var texdata_f = new Float32Array(texdata.buffer);
+        var shtexwidth = 0, shtexheight = 0; var shdata = null;
+        if (hasSH) { shtexwidth = 1024 * 2; shtexheight = Math.ceil((6 * vertexCount) / shtexwidth) + 1; shdata = new Uint32Array(shtexwidth * shtexheight * 4); }
         for (let i = 0; i < vertexCount; i++) {
-            texdata_f[8*i+0] = f_buffer[8*i+0]; texdata_f[8*i+1] = f_buffer[8*i+1]; texdata_f[8*i+2] = f_buffer[8*i+2];
-            texdata_c[4*(8*i+7)+0] = u_buffer[32*i+24+0]; texdata_c[4*(8*i+7)+1] = u_buffer[32*i+24+1]; texdata_c[4*(8*i+7)+2] = u_buffer[32*i+24+2]; texdata_c[4*(8*i+7)+3] = u_buffer[32*i+24+3];
-            let scale = [f_buffer[8*i+3+0], f_buffer[8*i+3+1], f_buffer[8*i+3+2]]; let rot = [(u_buffer[32*i+28+0]-128)/128, (u_buffer[32*i+28+1]-128)/128, (u_buffer[32*i+28+2]-128)/128, (u_buffer[32*i+28+3]-128)/128];
+            const fi = floatsPerRow * i; const bi = rowLength * i;
+            texdata_f[8*i+0] = f_buffer[fi+0]; texdata_f[8*i+1] = f_buffer[fi+1]; texdata_f[8*i+2] = f_buffer[fi+2];
+            texdata_c[4*(8*i+7)+0] = u_buffer[bi+24]; texdata_c[4*(8*i+7)+1] = u_buffer[bi+25]; texdata_c[4*(8*i+7)+2] = u_buffer[bi+26]; texdata_c[4*(8*i+7)+3] = u_buffer[bi+27];
+            let scale = [f_buffer[fi+3], f_buffer[fi+4], f_buffer[fi+5]]; let rot = [(u_buffer[bi+28]-128)/128, (u_buffer[bi+29]-128)/128, (u_buffer[bi+30]-128)/128, (u_buffer[bi+31]-128)/128];
             const M = [
                 1.0-2.0*(rot[2]*rot[2]+rot[3]*rot[3]), 2.0*(rot[1]*rot[2]+rot[0]*rot[3]), 2.0*(rot[1]*rot[3]-rot[0]*rot[2]),
                 2.0*(rot[1]*rot[2]-rot[0]*rot[3]), 1.0-2.0*(rot[1]*rot[1]+rot[3]*rot[3]), 2.0*(rot[2]*rot[3]+rot[0]*rot[1]),
                 2.0*(rot[1]*rot[3]+rot[0]*rot[2]), 2.0*(rot[2]*rot[3]-rot[0]*rot[1]), 1.0-2.0*(rot[1]*rot[1]+rot[2]*rot[2]),
-            ].map((k, i) => k * scale[Math.floor(i / 3)]);
+            ].map((k, mi) => k * scale[Math.floor(mi / 3)]);
             const sigma = [
                 M[0]*M[0]+M[3]*M[3]+M[6]*M[6], M[0]*M[1]+M[3]*M[4]+M[6]*M[7], M[0]*M[2]+M[3]*M[5]+M[6]*M[8],
                 M[1]*M[1]+M[4]*M[4]+M[7]*M[7], M[1]*M[2]+M[4]*M[5]+M[7]*M[8], M[2]*M[2]+M[5]*M[5]+M[8]*M[8],
             ];
             texdata[8*i+4] = packHalf2x16(4*sigma[0], 4*sigma[1]); texdata[8*i+5] = packHalf2x16(4*sigma[2], 4*sigma[3]); texdata[8*i+6] = packHalf2x16(4*sigma[4], 4*sigma[5]);
+            if (hasSH) {
+                const sh_fi = fi + 8; // f_rest_0 is at float index 8 (byte 32)
+                for (let t = 0; t < 6; t++) {
+                    const tl = i * 6 + t; const sc = tl % shtexwidth; const sr = (tl / shtexwidth) | 0;
+                    const sf = (sr * shtexwidth + sc) * 4;
+                    for (let c = 0; c < 4; c++) {
+                        const k0 = t*8 + c*2; const k1 = k0+1;
+                        shdata[sf+c] = packHalf2x16(k0<45 ? f_buffer[sh_fi+k0] : 0, k1<45 ? f_buffer[sh_fi+k1] : 0);
+                    }
+                }
+            }
         }
-        self.postMessage({ texdata, texwidth, texheight }, [texdata.buffer]);
+        if (hasSH) { self.postMessage({ texdata, texwidth, texheight, shdata, shtexwidth, shtexheight, hasSH }, [texdata.buffer, shdata.buffer]); }
+        else { self.postMessage({ texdata, texwidth, texheight, hasSH }, [texdata.buffer]); }
     }
 
     function runSort(viewProj) {
@@ -89,7 +109,7 @@ function createWorker(self) {
         if (lastVertexCount == vertexCount) { let dot = lastProj[2]*viewProj[2] + lastProj[6]*viewProj[6] + lastProj[10]*viewProj[10]; if (Math.abs(dot - 1) < 0.01) return; } else { generateTexture(); lastVertexCount = vertexCount; }
         let maxDepth = -Infinity; let minDepth = Infinity; let sizeList = new Int32Array(vertexCount);
         for (let i = 0; i < vertexCount; i++) {
-            let depth = ((viewProj[2]*f_buffer[8*i+0] + viewProj[6]*f_buffer[8*i+1] + viewProj[10]*f_buffer[8*i+2]) * 4096) | 0;
+            let depth = ((viewProj[2]*f_buffer[floatsPerRow*i+0] + viewProj[6]*f_buffer[floatsPerRow*i+1] + viewProj[10]*f_buffer[floatsPerRow*i+2]) * 4096) | 0;
             sizeList[i] = depth; if (depth > maxDepth) maxDepth = depth; if (depth < minDepth) minDepth = depth;
         }
         let depthInv = (256 * 256 - 1) / (maxDepth - minDepth); let counts0 = new Uint32Array(256 * 256);
@@ -110,10 +130,12 @@ function createWorker(self) {
             sizeIndex[row] = row; if (!types["scale_0"]) continue;
             const size = Math.exp(attrs.scale_0) * Math.exp(attrs.scale_1) * Math.exp(attrs.scale_2); const opacity = 1 / (1 + Math.exp(-attrs.opacity)); sizeList[row] = size * opacity;
         }
-        sizeIndex.sort((b, a) => sizeList[a] - sizeList[b]); const rowLength = 3 * 4 + 3 * 4 + 4 + 4; const buffer = new ArrayBuffer(rowLength * vertexCount);
+        const plyHasSH = !!types["f_rest_0"];
+        const plyRowLen = PLY_ROWLEN; // always use full row for PLY files
+        sizeIndex.sort((b, a) => sizeList[a] - sizeList[b]); const buffer = new ArrayBuffer(plyRowLen * vertexCount);
         for (let j = 0; j < vertexCount; j++) {
             row = sizeIndex[j];
-            const position = new Float32Array(buffer, j * rowLength, 3); const scales = new Float32Array(buffer, j * rowLength + 4 * 3, 3); const rgba = new Uint8ClampedArray(buffer, j * rowLength + 4 * 3 + 4 * 3, 4); const rot = new Uint8ClampedArray(buffer, j * rowLength + 4 * 3 + 4 * 3 + 4, 4);
+            const position = new Float32Array(buffer, j * plyRowLen, 3); const scales = new Float32Array(buffer, j * plyRowLen + 12, 3); const rgba = new Uint8ClampedArray(buffer, j * plyRowLen + 24, 4); const rot = new Uint8ClampedArray(buffer, j * plyRowLen + 28, 4);
             if (types["scale_0"]) {
                 const qlen = Math.sqrt(attrs.rot_0 ** 2 + attrs.rot_1 ** 2 + attrs.rot_2 ** 2 + attrs.rot_3 ** 2);
                 rot[0] = (attrs.rot_0 / qlen) * 128 + 128; rot[1] = (attrs.rot_1 / qlen) * 128 + 128; rot[2] = (attrs.rot_2 / qlen) * 128 + 128; rot[3] = (attrs.rot_3 / qlen) * 128 + 128;
@@ -122,22 +144,77 @@ function createWorker(self) {
             position[0] = attrs.x; position[1] = attrs.y; position[2] = attrs.z;
             if (types["f_dc_0"]) { const SH_C0 = 0.28209479177387814; rgba[0] = (0.5 + SH_C0 * attrs.f_dc_0) * 255; rgba[1] = (0.5 + SH_C0 * attrs.f_dc_1) * 255; rgba[2] = (0.5 + SH_C0 * attrs.f_dc_2) * 255; } else { rgba[0] = attrs.red; rgba[1] = attrs.green; rgba[2] = attrs.blue; }
             if (types["opacity"]) rgba[3] = (1 / (1 + Math.exp(-attrs.opacity))) * 255; else rgba[3] = 255;
+            if (plyHasSH) {
+                const shView = new Float32Array(buffer, j * plyRowLen + 32, 45);
+                for (let k = 0; k < 45; k++) { const key = "f_rest_" + k; shView[k] = types[key] ? attrs[key] : 0.0; }
+            }
         }
+        hasSH = plyHasSH; rowLength = plyRowLen; floatsPerRow = plyRowLen / 4;
         return buffer;
     }
     const throttledSort = () => { if (!sortRunning) { sortRunning = true; let lastView = viewProj; runSort(lastView); setTimeout(() => { sortRunning = false; if (lastView !== viewProj) throttledSort(); }, 0); } };
     let sortRunning;
     self.onmessage = (e) => {
-        if (e.data.ply) { vertexCount = 0; runSort(viewProj); buffer = processPlyBuffer(e.data.ply); vertexCount = Math.floor(buffer.byteLength / rowLength); postMessage({ buffer: buffer, save: !!e.data.save }); } 
-        else if (e.data.buffer) { buffer = e.data.buffer; vertexCount = e.data.vertexCount; } else if (e.data.vertexCount) { vertexCount = e.data.vertexCount; } else if (e.data.view) { viewProj = e.data.view; throttledSort(); }
+        if (e.data.ply) { vertexCount = 0; runSort(viewProj); buffer = processPlyBuffer(e.data.ply); vertexCount = Math.floor(buffer.byteLength / rowLength); postMessage({ buffer: buffer, save: !!e.data.save }); }
+        else if (e.data.buffer) { buffer = e.data.buffer; rowLength = SPLAT_ROWLEN; floatsPerRow = 8; hasSH = false; vertexCount = e.data.vertexCount; }
+        else if (e.data.vertexCount) { vertexCount = e.data.vertexCount; } else if (e.data.view) { viewProj = e.data.view; throttledSort(); }
     };
 }
 
 const vertexShaderSource = `
 #version 300 es
 precision highp float; precision highp int;
-uniform highp usampler2D u_texture; uniform mat4 projection, view; uniform vec2 focal; uniform vec2 viewport;
+uniform highp usampler2D u_texture; uniform highp usampler2D u_sh_texture;
+uniform mat4 projection, view; uniform vec2 focal; uniform vec2 viewport;
+uniform vec3 u_campos; uniform bool u_has_sh;
 in vec2 position; in int index; out vec4 vColor; out vec2 vPosition;
+
+const float SH_C1   = 0.4886025119029199;
+const float SH_C2_0 = 1.0925484305920792;  const float SH_C2_1 = -1.0925484305920792;
+const float SH_C2_2 = 0.31539156525252005; const float SH_C2_3 = -1.0925484305920792; const float SH_C2_4 = 0.5462742152960396;
+const float SH_C3_0 = -0.5900435899266435; const float SH_C3_1 = 2.890611442640554;
+const float SH_C3_2 = -0.4570457994644658; const float SH_C3_3 = 0.3731763325901154;
+const float SH_C3_4 = -0.4570457994644658; const float SH_C3_5 = 1.445305721320277; const float SH_C3_6 = -0.5900435899266435;
+
+// 6 SH texels per gaussian; each texel is RGBA32UI, each uint32 packs 2 half-floats.
+// Texels addressed linearly: index*6+t, row-major with width 2048.
+vec3 evalSHColor(vec3 dcRGB, vec3 dir) {
+    int base = index * 6;
+    uvec4 t0 = texelFetch(u_sh_texture, ivec2((base  )%2048,(base  )/2048), 0);
+    uvec4 t1 = texelFetch(u_sh_texture, ivec2((base+1)%2048,(base+1)/2048), 0);
+    uvec4 t2 = texelFetch(u_sh_texture, ivec2((base+2)%2048,(base+2)/2048), 0);
+    uvec4 t3 = texelFetch(u_sh_texture, ivec2((base+3)%2048,(base+3)/2048), 0);
+    uvec4 t4 = texelFetch(u_sh_texture, ivec2((base+4)%2048,(base+4)/2048), 0);
+    uvec4 t5 = texelFetch(u_sh_texture, ivec2((base+5)%2048,(base+5)/2048), 0);
+    // f_rest layout: [t*8+c*2] = c-pair low, [t*8+c*2+1] = c-pair high
+    // c00.x=f_rest_0, c00.y=f_rest_1, c01.x=f_rest_2 ... c07.x=f_rest_14(R end)
+    // c07.y=f_rest_15(G start) ... c14.y=f_rest_29(G end)
+    // c15.x=f_rest_30(B start) ... c22.x=f_rest_44(B end)
+    vec2 c00=unpackHalf2x16(t0.x),c01=unpackHalf2x16(t0.y),c02=unpackHalf2x16(t0.z),c03=unpackHalf2x16(t0.w);
+    vec2 c04=unpackHalf2x16(t1.x),c05=unpackHalf2x16(t1.y),c06=unpackHalf2x16(t1.z),c07=unpackHalf2x16(t1.w);
+    vec2 c08=unpackHalf2x16(t2.x),c09=unpackHalf2x16(t2.y),c10=unpackHalf2x16(t2.z),c11=unpackHalf2x16(t2.w);
+    vec2 c12=unpackHalf2x16(t3.x),c13=unpackHalf2x16(t3.y),c14=unpackHalf2x16(t3.z),c15=unpackHalf2x16(t3.w);
+    vec2 c16=unpackHalf2x16(t4.x),c17=unpackHalf2x16(t4.y),c18=unpackHalf2x16(t4.z),c19=unpackHalf2x16(t4.w);
+    vec2 c20=unpackHalf2x16(t5.x),c21=unpackHalf2x16(t5.y),c22=unpackHalf2x16(t5.z);
+    float x=dir.x,y=dir.y,z=dir.z,xx=x*x,yy=y*y,zz=z*z,xy=x*y,xz=x*z,yz=y*z;
+    // R channel: f_rest_0..14
+    float r=dcRGB.r;
+    r += -SH_C1*y*c00.x + SH_C1*z*c00.y - SH_C1*x*c01.x;
+    r += SH_C2_0*xy*c01.y + SH_C2_1*yz*c02.x + SH_C2_2*(2.0*zz-xx-yy)*c02.y + SH_C2_3*xz*c03.x + SH_C2_4*(xx-yy)*c03.y;
+    r += SH_C3_0*y*(3.0*xx-yy)*c04.x + SH_C3_1*xy*z*c04.y + SH_C3_2*y*(4.0*zz-xx-yy)*c05.x + SH_C3_3*z*(2.0*zz-3.0*xx-3.0*yy)*c05.y + SH_C3_4*x*(4.0*zz-xx-yy)*c06.x + SH_C3_5*z*(xx-yy)*c06.y + SH_C3_6*x*(xx-3.0*yy)*c07.x;
+    // G channel: f_rest_15..29
+    float g=dcRGB.g;
+    g += -SH_C1*y*c07.y + SH_C1*z*c08.x - SH_C1*x*c08.y;
+    g += SH_C2_0*xy*c09.x + SH_C2_1*yz*c09.y + SH_C2_2*(2.0*zz-xx-yy)*c10.x + SH_C2_3*xz*c10.y + SH_C2_4*(xx-yy)*c11.x;
+    g += SH_C3_0*y*(3.0*xx-yy)*c11.y + SH_C3_1*xy*z*c12.x + SH_C3_2*y*(4.0*zz-xx-yy)*c12.y + SH_C3_3*z*(2.0*zz-3.0*xx-3.0*yy)*c13.x + SH_C3_4*x*(4.0*zz-xx-yy)*c13.y + SH_C3_5*z*(xx-yy)*c14.x + SH_C3_6*x*(xx-3.0*yy)*c14.y;
+    // B channel: f_rest_30..44
+    float b=dcRGB.b;
+    b += -SH_C1*y*c15.x + SH_C1*z*c15.y - SH_C1*x*c16.x;
+    b += SH_C2_0*xy*c16.y + SH_C2_1*yz*c17.x + SH_C2_2*(2.0*zz-xx-yy)*c17.y + SH_C2_3*xz*c18.x + SH_C2_4*(xx-yy)*c18.y;
+    b += SH_C3_0*y*(3.0*xx-yy)*c19.x + SH_C3_1*xy*z*c19.y + SH_C3_2*y*(4.0*zz-xx-yy)*c20.x + SH_C3_3*z*(2.0*zz-3.0*xx-3.0*yy)*c20.y + SH_C3_4*x*(4.0*zz-xx-yy)*c21.x + SH_C3_5*z*(xx-yy)*c21.y + SH_C3_6*x*(xx-3.0*yy)*c22.x;
+    return vec3(r, g, b);
+}
+
 void main () {
     uvec4 cen = texelFetch(u_texture, ivec2((uint(index) & 0x3ffu) << 1, uint(index) >> 10), 0);
     vec4 cam = view * vec4(uintBitsToFloat(cen.xyz), 1); vec4 pos2d = projection * cam; float clip = 1.2 * pos2d.w;
@@ -149,7 +226,10 @@ void main () {
     float mid = (cov2d[0][0] + cov2d[1][1]) / 2.0; float radius = length(vec2((cov2d[0][0] - cov2d[1][1]) / 2.0, cov2d[0][1]));
     float lambda1 = mid + radius, lambda2 = mid - radius; if(lambda2 < 0.0) return;
     vec2 diagonalVector = normalize(vec2(cov2d[0][1], lambda1 - cov2d[0][0])); vec2 majorAxis = min(sqrt(2.0 * lambda1), 1024.0) * diagonalVector; vec2 minorAxis = min(sqrt(2.0 * lambda2), 1024.0) * vec2(diagonalVector.y, -diagonalVector.x);
-    vColor = clamp(pos2d.z/pos2d.w+1.0, 0.0, 1.0) * vec4((cov.w) & 0xffu, (cov.w >> 8) & 0xffu, (cov.w >> 16) & 0xffu, (cov.w >> 24) & 0xffu) / 255.0; vPosition = position;
+    vec3 dcRGB = vec3(float((cov.w) & 0xffu), float((cov.w >> 8u) & 0xffu), float((cov.w >> 16u) & 0xffu)) / 255.0;
+    float alpha = float((cov.w >> 24u) & 0xffu) / 255.0;
+    if (u_has_sh) { vec3 wpos = uintBitsToFloat(cen.xyz); vec3 dir = normalize(wpos - u_campos); dcRGB = clamp(evalSHColor(dcRGB, dir), 0.0, 1.0); }
+    vColor = clamp(pos2d.z/pos2d.w+1.0, 0.0, 1.0) * vec4(dcRGB, alpha); vPosition = position;
     vec2 vCenter = vec2(pos2d) / pos2d.w; gl_Position = vec4(vCenter + position.x * majorAxis / viewport + position.y * minorAxis / viewport, 0.0, 1.0);
 }`.trim();
 const fragmentShaderSource = `#version 300 es\nprecision highp float; in vec4 vColor; in vec2 vPosition; out vec4 fragColor;\nvoid main () { float A = -dot(vPosition, vPosition); if (A < -4.0) discard; float B = exp(A) * vColor.a; fragColor = vec4(B * vColor.rgb, B); }`.trim();
@@ -623,9 +703,16 @@ async function main() {
     gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.ONE, gl.ONE_MINUS_DST_ALPHA, gl.ONE); gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
 
     const u_projection = gl.getUniformLocation(program, "projection"); const u_viewport = gl.getUniformLocation(program, "viewport"); const u_focal = gl.getUniformLocation(program, "focal"); const u_view = gl.getUniformLocation(program, "view");
+    const u_campos = gl.getUniformLocation(program, "u_campos"); const u_has_sh = gl.getUniformLocation(program, "u_has_sh");
     const triangleVertices = new Float32Array([-2, -2, 2, -2, 2, 2, -2, 2]); const vertexBuffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer); gl.bufferData(gl.ARRAY_BUFFER, triangleVertices, gl.STATIC_DRAW);
     const a_position = gl.getAttribLocation(program, "position"); gl.enableVertexAttribArray(a_position); gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer); gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
     var texture = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, texture); var u_textureLocation = gl.getUniformLocation(program, "u_texture"); gl.uniform1i(u_textureLocation, 0);
+    // SH texture (unit 1) — initialize with a 1×1 dummy so the sampler is always valid
+    var shTexture = gl.createTexture(); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, shTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32UI, 1, 1, 0, gl.RGBA_INTEGER, gl.UNSIGNED_INT, new Uint32Array(4));
+    gl.uniform1i(gl.getUniformLocation(program, "u_sh_texture"), 1); gl.uniform1i(u_has_sh, 0);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texture);
     const indexBuffer = gl.createBuffer(); const a_index = gl.getAttribLocation(program, "index"); gl.enableVertexAttribArray(a_index); gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer); gl.vertexAttribIPointer(a_index, 1, gl.INT, false, 0, 0); gl.vertexAttribDivisor(a_index, 1);
 
     const resize = () => {
@@ -644,9 +731,16 @@ async function main() {
             splatData = new Uint8Array(e.data.buffer);
             if (e.data.save) { const blob = new Blob([splatData.buffer], { type: "application/octet-stream" }); const link = document.createElement("a"); link.download = "model.splat"; link.href = URL.createObjectURL(blob); document.body.appendChild(link); link.click(); }
         } else if (e.data.texdata) {
-            const { texdata, texwidth, texheight } = e.data;
+            const { texdata, texwidth, texheight, shdata, shtexwidth, shtexheight, hasSH: msgHasSH } = e.data;
             gl.bindTexture(gl.TEXTURE_2D, texture); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32UI, texwidth, texheight, 0, gl.RGBA_INTEGER, gl.UNSIGNED_INT, texdata); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texture);
+            if (msgHasSH && shdata) {
+                gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, shTexture);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32UI, shtexwidth, shtexheight, 0, gl.RGBA_INTEGER, gl.UNSIGNED_INT, shdata);
+                gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.uniform1i(u_has_sh, 1);
+            } else { gl.uniform1i(u_has_sh, 0); }
         } else if (e.data.depthIndex) {
             gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer); gl.bufferData(gl.ARRAY_BUFFER, e.data.depthIndex, gl.DYNAMIC_DRAW); vertexCount = e.data.vertexCount;
         }
@@ -828,6 +922,8 @@ async function main() {
         let actualViewMatrix = viewMatrix;
         const viewProj = multiply4(projectionMatrix, actualViewMatrix);
         worker.postMessage({ view: viewProj });
+        // Update camera world position for SH evaluation (extracted from view matrix)
+        { const m = actualViewMatrix; gl.uniform3fv(u_campos, new Float32Array([-(m[0]*m[12]+m[1]*m[13]+m[2]*m[14]), -(m[4]*m[12]+m[5]*m[13]+m[6]*m[14]), -(m[8]*m[12]+m[9]*m[13]+m[10]*m[14])])); }
 
         // --- UPDATE ANNOTATION PIN POSITIONS ---
         activeAnnotations.forEach(anno => {
