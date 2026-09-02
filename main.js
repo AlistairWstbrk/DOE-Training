@@ -629,8 +629,10 @@ async function main() {
     const indexBuffer = gl.createBuffer(); const a_index = gl.getAttribLocation(program, "index"); gl.enableVertexAttribArray(a_index); gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer); gl.vertexAttribIPointer(a_index, 1, gl.INT, false, 0, 0); gl.vertexAttribDivisor(a_index, 1);
 
     const resize = () => {
-        gl.uniform2fv(u_focal, new Float32Array([camera.fx, camera.fy]));
-        projectionMatrix = getProjectionMatrix(camera.fx, camera.fy, innerWidth, innerHeight);
+        const fxScaled = camera.fx * innerWidth / camera.width;
+        const fyScaled = camera.fy * innerHeight / camera.height;
+        gl.uniform2fv(u_focal, new Float32Array([fxScaled, fyScaled]));
+        projectionMatrix = getProjectionMatrix(fxScaled, fyScaled, innerWidth, innerHeight);
         gl.uniform2fv(u_viewport, new Float32Array([innerWidth, innerHeight]));
         gl.canvas.width = Math.round(innerWidth / downsample); gl.canvas.height = Math.round(innerHeight / downsample); gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.uniformMatrix4fv(u_projection, false, projectionMatrix);
