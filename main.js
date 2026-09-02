@@ -575,6 +575,7 @@ async function main() {
         if (isLast) {
             document.getElementById('tour-container').style.display = 'none';
             isTourActive = false;
+            viewMatrix = defaultViewMatrix;
             if (typeof sidebarOpen !== 'undefined' && !sidebarOpen) toggleSidebar();
         } else {
             isTransitioning = false;
