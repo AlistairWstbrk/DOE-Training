@@ -303,8 +303,9 @@ async function main() {
     }
 
     const decodedUrlParam = decodeURIComponent(urlParam);
+    const decodedUrlLower = decodedUrlParam.toLowerCase();
     for (let key in tourDatabase) {
-        if (decodedUrlParam.includes(key)) { activeTourFrames = tourDatabase[key]; break; }
+        if (decodedUrlLower.includes(key.toLowerCase())) { activeTourFrames = tourDatabase[key]; break; }
     }
 
     // --- INTEGRATED 3D ANNOTATIONS SYSTEM ---
@@ -579,10 +580,10 @@ async function main() {
         transitionProgress = 0; isTransitioning = true; carousel = false;
     }
 
-    document.getElementById('startTourBtn').addEventListener('click', () => { document.getElementById('tour-container').style.display = 'block'; isTourActive = true; goToTourFrame(0); });
+    document.getElementById('startTourBtn').addEventListener('click', () => { document.getElementById('tour-container').style.display = 'block'; isTourActive = true; updateTourUI(); goToTourFrame(0); });
     document.getElementById('closeTourBtn').addEventListener('click', () => { document.getElementById('tour-container').style.display = 'none'; isTourActive = false; });
-    document.getElementById('tour-prev').addEventListener('click', () => { if (!isTransitioning) goToTourFrame(currentTourIndex - 1); });
-    document.getElementById('tour-next').addEventListener('click', () => { if (!isTransitioning) goToTourFrame(currentTourIndex + 1); });
+    document.getElementById('tour-prev').addEventListener('click', () => { isTransitioning = false; goToTourFrame(currentTourIndex - 1); });
+    document.getElementById('tour-next').addEventListener('click', () => { isTransitioning = false; goToTourFrame(currentTourIndex + 1); });
 
     let jumpDelta = 0; let vertexCount = 0; let lastFrame = 0; let avgFps = 0; let start = 0;
 
@@ -590,7 +591,7 @@ async function main() {
         let inv = invert4(viewMatrix);
         
         if (isTransitioning) {
-            transitionProgress += 0.02; 
+            transitionProgress += 0.05;
             if (transitionProgress >= 1.0) { transitionProgress = 1.0; isTransitioning = false; }
             let t = transitionProgress * transitionProgress * (3 - 2 * transitionProgress);
             let startCam = invert4(startTourMatrix); let targetCam = invert4(targetTourMatrix); let currentCam = new Array(16);
