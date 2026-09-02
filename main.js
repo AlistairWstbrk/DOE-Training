@@ -422,23 +422,7 @@ async function main() {
     };
     window.addEventListener("resize", resize); resize();
 
-    // --- COORDINATE PICKER (right-click on canvas) ---
-    const coordOverlay = document.createElement('div');
-    coordOverlay.id = 'coord-overlay';
-    coordOverlay.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(10,14,22,0.95);border:1px solid rgba(75,144,255,0.5);border-radius:8px;padding:10px 16px;font-size:0.78rem;color:#C8D8F0;z-index:3000;display:none;font-family:monospace;text-align:center;max-width:420px;';
-    document.body.appendChild(coordOverlay);
-
-    canvas.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        const m = viewMatrix;
-        const cx = -(m[0]*m[12]+m[1]*m[13]+m[2]*m[14]);
-        const cy = -(m[4]*m[12]+m[5]*m[13]+m[6]*m[14]);
-        const cz = -(m[8]*m[12]+m[9]*m[13]+m[10]*m[14]);
-        const fmt = v => v.toFixed(3);
-        coordOverlay.innerHTML = `📍 Camera position (use as annotation position):<br><strong>[${fmt(cx)}, ${fmt(cy)}, ${fmt(cz)}]</strong><br><span style="color:#8899aa;font-size:0.72rem">Navigate close to component, then right-click to capture coordinates. Click to dismiss.</span>`;
-        coordOverlay.style.display = 'block';
-    });
-    coordOverlay.onclick = () => { coordOverlay.style.display = 'none'; };
+    canvas.addEventListener('contextmenu', (e) => { e.preventDefault(); });
 
     worker.onmessage = (e) => {
         if (e.data.buffer) {
@@ -460,52 +444,21 @@ async function main() {
         }
     };
 
-    let activeKeys = []; let currentCameraIndex = 0;
-    window.addEventListener("keydown", (e) => {
-        if(isTourActive) return; 
-        carousel = false;
-        if (!activeKeys.includes(e.code)) activeKeys.push(e.code);
-        if (/\d/.test(e.key)) { currentCameraIndex = parseInt(e.key); camera = cameras[currentCameraIndex] || cameras[0]; viewMatrix = getViewMatrix(camera); }
-        if (["-", "_"].includes(e.key)) { currentCameraIndex = (currentCameraIndex + cameras.length - 1) % cameras.length; viewMatrix = getViewMatrix(cameras[currentCameraIndex]); }
-        if (["+", "="].includes(e.key)) { currentCameraIndex = (currentCameraIndex + 1) % cameras.length; viewMatrix = getViewMatrix(cameras[currentCameraIndex]); }
-        camid.innerText = "cam  " + currentCameraIndex;
-        if (e.code == "KeyV") { location.hash = "#" + JSON.stringify(viewMatrix.map((k) => Math.round(k * 100) / 100)); camid.innerText = ""; } 
-        else if (e.code === "KeyP") { carousel = true; camid.innerText = ""; }
-        else if (e.code === "KeyC") { let camWorld = invert4(viewMatrix); console.log(`Current Camera Pos: [${camWorld[12].toFixed(2)}, ${camWorld[13].toFixed(2)}, ${camWorld[14].toFixed(2)}]`); }
-    });
+    let activeKeys = [];
     window.addEventListener("keyup", (e) => { activeKeys = activeKeys.filter((k) => k !== e.code); });
     window.addEventListener("blur", () => { activeKeys = []; });
 
-    window.addEventListener("wheel", (e) => {
-        if(isTourActive) return;
-        carousel = false; e.preventDefault();
-        const scale = e.deltaMode == 1 ? 10 : e.deltaMode == 2 ? innerHeight : 1; let inv = invert4(viewMatrix);
-        if (e.shiftKey) { inv = translate4(inv, (e.deltaX * scale) / innerWidth, (e.deltaY * scale) / innerHeight, 0); }
-        else if (e.ctrlKey || e.metaKey) { inv = translate4(inv, 0, 0, (-10 * (e.deltaY * scale)) / innerHeight); }
-        else { let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, -(e.deltaX * scale) / innerWidth, 0, 1, 0); inv = rotate4(inv, (e.deltaY * scale) / innerHeight, 1, 0, 0); inv = translate4(inv, 0, 0, -d); }
-        viewMatrix = invert4(inv);
-    }, { passive: false });
+    window.addEventListener("wheel", (e) => { e.preventDefault(); }, { passive: false });
 
     let startX, startY, down;
-    canvas.addEventListener("mousedown", (e) => { if(isTourActive) return; carousel = false; e.preventDefault(); startX = e.clientX; startY = e.clientY; down = e.ctrlKey || e.metaKey ? 2 : 1; });
-    canvas.addEventListener("contextmenu", (e) => { if(isTourActive) return; carousel = false; e.preventDefault(); startX = e.clientX; startY = e.clientY; down = 2; });
-    canvas.addEventListener("mousemove", (e) => {
-        if(isTourActive) return;
-        e.preventDefault();
-        if (down == 1) { let inv = invert4(viewMatrix); let dx = (5 * (e.clientX - startX)) / innerWidth; let dy = (5 * (e.clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(inv); startX = e.clientX; startY = e.clientY; }
-        else if (down == 2) { let inv = invert4(viewMatrix); inv = translate4(inv, (-10 * (e.clientX - startX)) / innerWidth, 0, (10 * (e.clientY - startY)) / innerHeight); viewMatrix = invert4(inv); startX = e.clientX; startY = e.clientY; }
-    });
-    canvas.addEventListener("mouseup", (e) => { e.preventDefault(); down = false; startX = 0; startY = 0; });
+    canvas.addEventListener("mousedown", (e) => { e.preventDefault(); });
+    canvas.addEventListener("mousemove", (e) => { e.preventDefault(); });
+    canvas.addEventListener("mouseup", (e) => { e.preventDefault(); });
 
     let altX = 0, altY = 0;
-    canvas.addEventListener("touchstart", (e) => { if(isTourActive) return; e.preventDefault(); if (e.touches.length === 1) { carousel = false; startX = e.touches[0].clientX; startY = e.touches[0].clientY; down = 1; } else if (e.touches.length === 2) { carousel = false; startX = e.touches[0].clientX; altX = e.touches[1].clientX; startY = e.touches[0].clientY; altY = e.touches[1].clientY; down = 1; } }, { passive: false });
-    canvas.addEventListener("touchmove", (e) => {
-        if(isTourActive) return;
-        e.preventDefault();
-        if (e.touches.length === 1 && down) { let inv = invert4(viewMatrix); let dx = (4 * (e.touches[0].clientX - startX)) / innerWidth; let dy = (4 * (e.touches[0].clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(inv); startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
-        else if (e.touches.length === 2) { const dtheta = Math.atan2(startY - altY, startX - altX) - Math.atan2(e.touches[0].clientY - e.touches[1].clientY, e.touches[0].clientX - e.touches[1].clientX); const dscale = Math.hypot(startX - altX, startY - altY) / Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); const dx = (e.touches[0].clientX + e.touches[1].clientX - (startX + altX)) / 2; const dy = (e.touches[0].clientY + e.touches[1].clientY - (startY + altY)) / 2; let inv = invert4(viewMatrix); inv = rotate4(inv, dtheta, 0, 0, 1); inv = translate4(inv, -dx / innerWidth, -dy / innerHeight, 0); inv = translate4(inv, 0, 0, 3 * (1 - dscale)); viewMatrix = invert4(inv); startX = e.touches[0].clientX; altX = e.touches[1].clientX; startY = e.touches[0].clientY; altY = e.touches[1].clientY; }
-    }, { passive: false });
-    canvas.addEventListener("touchend", (e) => { e.preventDefault(); down = false; startX = 0; startY = 0; }, { passive: false });
+    canvas.addEventListener("touchstart", (e) => { e.preventDefault(); }, { passive: false });
+    canvas.addEventListener("touchmove", (e) => { e.preventDefault(); }, { passive: false });
+    canvas.addEventListener("touchend", (e) => { e.preventDefault(); }, { passive: false });
 
     window.addEventListener("gamepadconnected", (e) => { console.log(`Gamepad connected at index ${e.gamepad.index}: ${e.gamepad.id}.`); });
     let leftGamepadTrigger, rightGamepadTrigger;
@@ -563,10 +516,32 @@ async function main() {
         transitionProgress = 0; isTransitioning = true; carousel = false;
     }
 
-    document.getElementById('startTourBtn').addEventListener('click', () => { document.getElementById('tour-container').style.display = 'block'; isTourActive = true; updateTourUI(); goToTourFrame(0); });
-    document.getElementById('closeTourBtn').addEventListener('click', () => { document.getElementById('tour-container').style.display = 'none'; isTourActive = false; });
+    document.getElementById('startTourBtn').addEventListener('click', () => {
+        document.getElementById('tour-container').style.display = 'block';
+        isTourActive = true;
+        updateTourUI();
+        goToTourFrame(0);
+        // collapse sidebar while tour is active
+        if (typeof sidebarOpen !== 'undefined' && sidebarOpen) toggleSidebar();
+    });
+    document.getElementById('closeTourBtn').addEventListener('click', () => {
+        document.getElementById('tour-container').style.display = 'none';
+        isTourActive = false;
+        // reopen sidebar when tour is dismissed
+        if (typeof sidebarOpen !== 'undefined' && !sidebarOpen) toggleSidebar();
+    });
     document.getElementById('tour-prev').addEventListener('click', () => { isTransitioning = false; goToTourFrame(currentTourIndex - 1); });
-    document.getElementById('tour-next').addEventListener('click', () => { isTransitioning = false; goToTourFrame(currentTourIndex + 1); });
+    document.getElementById('tour-next').addEventListener('click', () => {
+        const isLast = currentTourIndex >= activeTourFrames.length - 1;
+        if (isLast) {
+            document.getElementById('tour-container').style.display = 'none';
+            isTourActive = false;
+            if (typeof sidebarOpen !== 'undefined' && !sidebarOpen) toggleSidebar();
+        } else {
+            isTransitioning = false;
+            goToTourFrame(currentTourIndex + 1);
+        }
+    });
 
     let jumpDelta = 0; let vertexCount = 0; let lastFrame = 0; let avgFps = 0; let start = 0;
 
