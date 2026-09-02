@@ -575,6 +575,47 @@ async function main() {
             warning: "Disconnecting may trigger the vehicle's anti-theft alarm.",
             targetUrlSnippet: "Equinox EV (Hood Closed)"
         },
+        // --- EQUINOXREFINE_FINAL annotations (refined scan, coordinate space X[-0.72,0.66] Y[-1.30,-0.18] Z[-1.50,1.94]) ---
+        {
+            id: "RF_12V",
+            position: [0.42, -0.55, -0.95],
+            title: "🔋 12V Auxiliary Battery",
+            description: "Lead-acid 12V battery powering conventional systems and — critically — the HV contactors. Double-cut the LV cable on BOTH sides of the yellow tape and remove the cut section.\n\nWait 10 sec (airbag reserve), then 60 sec (HV discharge).",
+            warning: "NEVER cut 12V during active thermal runaway mitigation.",
+            targetUrlSnippet: "EQUINOXREFINE_FINAL"
+        },
+        {
+            id: "RF_DriveUnit",
+            position: [0.0, -0.42, -0.70],
+            title: "⚡ Drive Unit (Motor + Inverter)",
+            description: "The electric drive unit occupies most of the engine bay. Contains the 3-phase AC motor and inverter module. Orange HV cables connect to the HV battery pack beneath the vehicle floor.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            targetUrlSnippet: "EQUINOXREFINE_FINAL"
+        },
+        {
+            id: "RF_HVBattery",
+            position: [0.0, -1.20, 0.30],
+            title: "🟡 HV Battery Pack",
+            description: "Class B Li-Ion high voltage battery mounted under the vehicle as a structural floor component. The HV system may remain energized even when the vehicle is OFF.\n\nDo NOT lift the vehicle from any location on the HV battery.",
+            warning: "HV battery is structural — improper lifting or cutting can cause hazard.",
+            targetUrlSnippet: "EQUINOXREFINE_FINAL"
+        },
+        {
+            id: "RF_ChargePort",
+            position: [-0.55, -0.60, 0.85],
+            title: "🔌 Charge Port",
+            description: "If the vehicle is connected to a charge station: remove the charge handle from the vehicle first. Consider terminating power at the charging station.\n\nCommon handle disconnects normally. DC Fast Charge handle may require additional effort.",
+            warning: "Disconnecting may trigger the vehicle's anti-theft alarm.",
+            targetUrlSnippet: "EQUINOXREFINE_FINAL"
+        },
+        {
+            id: "RF_Airbags",
+            position: [0.0, -0.50, 1.60],
+            title: "��� 8 Airbag Locations",
+            description: "The Equinox EV has 8 airbags:\n• Driver — steering wheel\n• Front Passenger — instrument panel\n• 2× Front Knee Bolster\n• 2× Front Seat Outboard\n• 2× Roof Rail\n\nAfter LV cut: wait 10 seconds before working near deployment zones.",
+            warning: null,
+            targetUrlSnippet: "EQUINOXREFINE_FINAL"
+        },
         // --- Engine Bay Merged Scan Annotations ---
         {
             id: "EB_DriveUnit",
@@ -720,43 +761,6 @@ async function main() {
     const bgBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,1,1,-1,1]), gl.STATIC_DRAW);
     const bg_a = gl.getAttribLocation(bgProg, "a");
 
-    // ── Floor plane program ────────────────────────────────────────────────────
-    const FLOOR_Y = -1.42; // world-space Y of ground plane
-    const floorVS = `#version 300 es
-precision highp float;
-uniform mat4 uProj,uView;
-in vec2 a; out vec2 vXZ;
-void main(){vXZ=a;gl_Position=uProj*uView*vec4(a.x,${FLOOR_Y.toFixed(2)},a.y,1.);}`.trim();
-    const floorFS = `#version 300 es
-precision highp float;
-in vec2 vXZ; out vec4 o;
-void main(){
-    vec2 g=abs(fract(vXZ*.8+.5)-.5);
-    float line=1.-smoothstep(.0,.025,min(g.x,g.y));
-    vec3 col=mix(vec3(.12,.12,.13),vec3(.20,.20,.21),line*.55);
-    float r=length(vXZ)/7.;
-    float alpha=(1.-smoothstep(.65,1.,r))*.94;
-    o=vec4(col,alpha);
-}`.trim();
-    const floorProg = gl.createProgram();
-    { const v=gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(v,floorVS); gl.compileShader(v); const f=gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(f,floorFS); gl.compileShader(f); gl.attachShader(floorProg,v); gl.attachShader(floorProg,f); gl.linkProgram(floorProg); }
-    const S=8; const floorBuf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,floorBuf); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-S,-S,S,-S,S,S,-S,S]),gl.STATIC_DRAW);
-    const floor_a=gl.getAttribLocation(floorProg,"a"); const floor_uProj=gl.getUniformLocation(floorProg,"uProj"); const floor_uView=gl.getUniformLocation(floorProg,"uView");
-
-    // Restore gaussian program state
-    gl.useProgram(program); gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer); gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
-
-    // ── Camera clamp helper ────────────────────────────────────────────────────
-    const CAM_MIN_Y=-0.60, CAM_MIN_DIST=1.2, CAM_MAX_DIST=9.0, CAR_CX=0, CAR_CY=-0.74, CAR_CZ=0.22;
-    function clampCamera(inv) {
-        if (inv[13] < CAM_MIN_Y) inv[13] = CAM_MIN_Y;
-        const dx=inv[12]-CAR_CX, dy=inv[13]-CAR_CY, dz=inv[14]-CAR_CZ;
-        const dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
-        if (dist<CAM_MIN_DIST){const s=CAM_MIN_DIST/dist;inv[12]=CAR_CX+dx*s;inv[13]=Math.max(CAR_CY+dy*s,CAM_MIN_Y);inv[14]=CAR_CZ+dz*s;}
-        if (dist>CAM_MAX_DIST){const s=CAM_MAX_DIST/dist;inv[12]=CAR_CX+dx*s;inv[13]=CAR_CY+dy*s;inv[14]=CAR_CZ+dz*s;}
-        return inv;
-    }
-
     const resize = () => {
         const fxScaled = camera.fx * innerWidth / camera.width;
         const fyScaled = camera.fy * innerHeight / camera.height;
@@ -811,7 +815,7 @@ void main(){
         if (e.shiftKey) { inv = translate4(inv, (e.deltaX * scale) / innerWidth, (e.deltaY * scale) / innerHeight, 0); }
         else if (e.ctrlKey || e.metaKey) { inv = translate4(inv, 0, 0, (-10 * (e.deltaY * scale)) / innerHeight); }
         else { let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, -(e.deltaX * scale) / innerWidth, 0, 1, 0); inv = rotate4(inv, (e.deltaY * scale) / innerHeight, 1, 0, 0); inv = translate4(inv, 0, 0, -d); }
-        viewMatrix = invert4(clampCamera(inv));
+        viewMatrix = invert4(inv);
     }, { passive: false });
 
     let startX, startY, down;
@@ -820,8 +824,8 @@ void main(){
     canvas.addEventListener("mousemove", (e) => {
         if(isTourActive) return;
         e.preventDefault();
-        if (down == 1) { let inv = invert4(viewMatrix); let dx = (5 * (e.clientX - startX)) / innerWidth; let dy = (5 * (e.clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(clampCamera(inv)); startX = e.clientX; startY = e.clientY; }
-        else if (down == 2) { let inv = invert4(viewMatrix); inv = translate4(inv, (-10 * (e.clientX - startX)) / innerWidth, 0, (10 * (e.clientY - startY)) / innerHeight); viewMatrix = invert4(clampCamera(inv)); startX = e.clientX; startY = e.clientY; }
+        if (down == 1) { let inv = invert4(viewMatrix); let dx = (5 * (e.clientX - startX)) / innerWidth; let dy = (5 * (e.clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(inv); startX = e.clientX; startY = e.clientY; }
+        else if (down == 2) { let inv = invert4(viewMatrix); inv = translate4(inv, (-10 * (e.clientX - startX)) / innerWidth, 0, (10 * (e.clientY - startY)) / innerHeight); viewMatrix = invert4(inv); startX = e.clientX; startY = e.clientY; }
     });
     canvas.addEventListener("mouseup", (e) => { e.preventDefault(); down = false; startX = 0; startY = 0; });
 
@@ -830,8 +834,8 @@ void main(){
     canvas.addEventListener("touchmove", (e) => {
         if(isTourActive) return;
         e.preventDefault();
-        if (e.touches.length === 1 && down) { let inv = invert4(viewMatrix); let dx = (4 * (e.touches[0].clientX - startX)) / innerWidth; let dy = (4 * (e.touches[0].clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(clampCamera(inv)); startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
-        else if (e.touches.length === 2) { const dtheta = Math.atan2(startY - altY, startX - altX) - Math.atan2(e.touches[0].clientY - e.touches[1].clientY, e.touches[0].clientX - e.touches[1].clientX); const dscale = Math.hypot(startX - altX, startY - altY) / Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); const dx = (e.touches[0].clientX + e.touches[1].clientX - (startX + altX)) / 2; const dy = (e.touches[0].clientY + e.touches[1].clientY - (startY + altY)) / 2; let inv = invert4(viewMatrix); inv = rotate4(inv, dtheta, 0, 0, 1); inv = translate4(inv, -dx / innerWidth, -dy / innerHeight, 0); inv = translate4(inv, 0, 0, 3 * (1 - dscale)); viewMatrix = invert4(clampCamera(inv)); startX = e.touches[0].clientX; altX = e.touches[1].clientX; startY = e.touches[0].clientY; altY = e.touches[1].clientY; }
+        if (e.touches.length === 1 && down) { let inv = invert4(viewMatrix); let dx = (4 * (e.touches[0].clientX - startX)) / innerWidth; let dy = (4 * (e.touches[0].clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(inv); startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
+        else if (e.touches.length === 2) { const dtheta = Math.atan2(startY - altY, startX - altX) - Math.atan2(e.touches[0].clientY - e.touches[1].clientY, e.touches[0].clientX - e.touches[1].clientX); const dscale = Math.hypot(startX - altX, startY - altY) / Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); const dx = (e.touches[0].clientX + e.touches[1].clientX - (startX + altX)) / 2; const dy = (e.touches[0].clientY + e.touches[1].clientY - (startY + altY)) / 2; let inv = invert4(viewMatrix); inv = rotate4(inv, dtheta, 0, 0, 1); inv = translate4(inv, -dx / innerWidth, -dy / innerHeight, 0); inv = translate4(inv, 0, 0, 3 * (1 - dscale)); viewMatrix = invert4(inv); startX = e.touches[0].clientX; altX = e.touches[1].clientX; startY = e.touches[0].clientY; altY = e.touches[1].clientY; }
     }, { passive: false });
     canvas.addEventListener("touchend", (e) => { e.preventDefault(); down = false; startX = 0; startY = 0; }, { passive: false });
 
@@ -953,7 +957,7 @@ void main(){
             inv = rotate4(inv, -0.1 * jumpDelta, 1, 0, 0);
         }
 
-        viewMatrix = invert4(clampCamera(inv));
+        viewMatrix = invert4(inv);
 
         if (carousel && !isTourActive) {
             let inv = invert4(defaultViewMatrix); const t = Math.sin((Date.now() - start) / 5000);
@@ -1009,18 +1013,6 @@ void main(){
             gl.uniformMatrix4fv(u_view, false, actualViewMatrix);
             { const m = actualViewMatrix; gl.uniform3fv(u_campos, new Float32Array([-(m[0]*m[12]+m[1]*m[13]+m[2]*m[14]), -(m[4]*m[12]+m[5]*m[13]+m[6]*m[14]), -(m[8]*m[12]+m[9]*m[13]+m[10]*m[14])])); }
             gl.drawArraysInstanced(gl.TRIANGLE_FAN, 0, 4, vertexCount);
-
-            // 3. Floor plane (fills through sparse/hollow areas)
-            gl.useProgram(floorProg);
-            gl.bindBuffer(gl.ARRAY_BUFFER, floorBuf); gl.enableVertexAttribArray(floor_a); gl.vertexAttribPointer(floor_a, 2, gl.FLOAT, false, 0, 0);
-            gl.uniformMatrix4fv(floor_uProj, false, projectionMatrix); gl.uniformMatrix4fv(floor_uView, false, actualViewMatrix);
-            gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE);
-            gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-
-            // Restore gaussian program state for next frame
-            gl.useProgram(program); gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer); gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
-            gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer); gl.vertexAttribIPointer(a_index, 1, gl.INT, false, 0, 0);
-            gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.ONE, gl.ONE_MINUS_DST_ALPHA, gl.ONE);
         } else {
             document.getElementById("spinner").style.display = ""; start = Date.now() + 2000;
         }

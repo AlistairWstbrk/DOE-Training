@@ -47,6 +47,9 @@
             .st-button-secondary:hover { border-color: #FF4B4B; color: #FF4B4B; }
             .st-slider { width: 100%; margin: 10px 0 15px 0; accent-color: #FF4B4B; }
             hr { border-top: 1px solid rgba(250, 250, 250, 0.1); border-bottom: none; margin: 24px 0; }
+            #pdfPanel { position:fixed; top:0; right:-680px; width:660px; height:100vh; background:#1a1a1e; z-index:2000; display:flex; flex-direction:column; box-shadow:-4px 0 20px rgba(0,0,0,0.5); transition:right 0.3s ease; border-left:1px solid rgba(250,250,250,0.1); }
+            #pdfPanel.open { right:0; }
+            #pdfPanelHeader { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:#262730; border-bottom:1px solid rgba(250,250,250,0.1); font-size:0.85rem; color:#ccc; flex-shrink:0; }
 
             /* --- 3D ANNOTATION MARKERS --- */
             .splat-marker { position: absolute; pointer-events: none; z-index: 500; display: none; }
@@ -140,6 +143,15 @@
 		
         <canvas id="canvas"></canvas>
 
+        <!-- PDF panel — slides in from right when .open -->
+        <div id="pdfPanel">
+            <div id="pdfPanelHeader">
+                <span>📄 Equinox EV 2024 — Emergency Response Guide</span>
+                <button onclick="document.getElementById('pdfPanel').classList.remove('open')" style="background:none;border:none;color:#ccc;font-size:1.1rem;cursor:pointer;padding:0 4px;">✖</button>
+            </div>
+            <iframe src="equinox-erg.pdf#toolbar=1" style="width:100%;flex:1;border:none;background:#222;"></iframe>
+        </div>
+
         <div id="devCrosshair" style="display:none; position:absolute; top:50%; left:50%; width:24px; height:24px; transform:translate(-50%, -50%); pointer-events:none; z-index:100;">
             <div style="position:absolute; top:11px; left:0; width:24px; height:2px; background:rgba(255, 75, 75, 0.9);"></div>
             <div style="position:absolute; top:0; left:11px; width:2px; height:24px; background:rgba(255, 75, 75, 0.9);"></div>
@@ -155,6 +167,15 @@
                 <select id="cameraSelect" class="st-input" onchange="changeCameraView(this.value)">
                     <option value="" disabled selected>-- Select a View --</option>
                 </select>
+            </div>
+
+            <hr>
+
+            <div class="sidebar-section">
+                <h3 style="margin-top: 0; font-size: 1.1rem; color: #e8a020;">📄 Emergency Response Guide</h3>
+                <p style="font-size: 0.82rem; color: #ccc; margin-bottom: 10px;">Chevrolet Equinox EV 2024 — First Responder Reference</p>
+                <button class="st-button" style="width:100%; margin-bottom:8px;" onclick="document.getElementById('pdfPanel').classList.toggle('open')">📖 View / Hide PDF</button>
+                <a href="equinox-erg.pdf" target="_blank" class="st-button" style="display:block; text-align:center; text-decoration:none; background:#333; color:#ccc;">⬇ Open in New Tab</a>
             </div>
 
             <hr>
