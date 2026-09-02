@@ -240,262 +240,30 @@ let viewMatrix = defaultViewMatrix;
 function posToMatrix(x, y, z) { return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -x, -y, -z, 1]; }
 
 const tourDatabase = {
-    "enginebay": [
-        {
-            title: "🔍 Engine Bay — Safety Overview",
-            section: "Step 1 of 8 — Entry Assessment",
-            description: "Before approaching the open engine bay of the Equinox EV, confirm the vehicle is in PARK and the EPB is engaged. The hood release is a handle on the lower left of the instrument panel.\n\nNote: This is an ALL-ELECTRIC vehicle — there is no combustion engine. The bay holds the drive unit, HV wiring, thermal management system, and the 12V auxiliary battery.",
-            highlight: "⚠️ The vehicle can be SILENT and still have live HV systems. Always assume orange cables are energized. Wear full PPE.",
-            warning: null,
-            matrix: defaultViewMatrix
-        },
-        {
-            title: "⚡ Drive Unit & Inverter",
-            section: "Step 2 of 8 — Main Powerplant",
-            description: "The drive unit (electric motor + inverter) dominates the front of the engine bay. It is the primary propulsion component and contains high-voltage windings.\n\nThe inverter converts DC battery power to 3-phase AC for the motor. High-voltage orange cables connect the inverter to the HV battery running through the floor.",
-            highlight: "The drive unit enclosure is sealed — do NOT puncture or cut it. Treat the entire assembly as energized until the HV system is confirmed isolated.",
-            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            matrix: posToMatrix(0.0, 0.15, 0.2)
-        },
-        {
-            title: "🔋 12V Auxiliary Battery",
-            section: "Step 3 of 8 — Low Voltage System",
-            description: "The 12V lead-acid auxiliary battery is located in the front engine bay, typically on the right side (passenger side). It powers conventional low-voltage systems: lights, infotainment, power windows, and critically — the HV contactors.\n\nCutting the 12V system: double-cut the LV cable on BOTH sides of the yellow tape. Remove the cut section entirely.",
-            highlight: "Cutting 12V disables: airbag system + HV contactors simultaneously. Wait 10 sec (airbags) then 1 min (HV discharge) before working near those systems.",
-            warning: "NEVER cut 12V during active thermal runaway ('Battery Danger Detected') — it will disable the battery cooling system.",
-            matrix: posToMatrix(0.9, 0.18, 0.3)
-        },
-        {
-            title: "🟠 HV Junction Box / PDU",
-            section: "Step 4 of 8 — High Voltage Wiring",
-            description: "The High Voltage Junction Box (Power Distribution Unit) routes orange HV cables between the battery pack, drive unit, and onboard charger. Multiple orange cables converge here.\n\nHV battery warning label is under the center front compartment sight shield on the air inlet grill panel.",
-            highlight: "All orange cables in this zone are 400V+ DC. The HV system remains energized when the vehicle is OFF — it only de-energizes after a full LV disable procedure.",
-            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            matrix: posToMatrix(-0.3, 0.12, 0.5)
-        },
-        {
-            title: "🔴 Manual Service Disconnect (MSD)",
-            section: "Step 5 of 8 — Emergency Isolation",
-            description: "The Manual Service Disconnect isolates the HV battery mid-pack, creating a physical break in the high-voltage circuit. On the Equinox EV, it is accessible from the front compartment area.\n\nTo use: lift the MSD cover and pull upward on the plug. This mechanically opens the HV circuit. After removal, wait 1 minute for capacitors to discharge.",
-            highlight: "MSD removal alone does NOT disable airbags — also perform the LV cable cut and wait 10 seconds before working near deployment zones.",
-            warning: "After MSD removal: assume residual HV charge for at least 60 seconds.",
-            matrix: posToMatrix(-0.6, 0.10, 0.0)
-        },
-        {
-            title: "🌡️ Thermal Management / Coolant",
-            section: "Step 6 of 8 — Cooling System",
-            description: "The Equinox EV has a liquid cooling system for the HV battery and drive unit. The coolant reservoir is visible in the engine bay. During thermal runaway, this system activates automatically if low voltage power is present.\n\nBright-colored (typically orange or pink) HV-safe coolant is used — do NOT confuse coolant hoses with HV cables.",
-            highlight: "Do NOT cut coolant lines. A rupture during a thermal event releases hot, pressurized liquid near energized HV components.",
-            warning: null,
-            matrix: posToMatrix(-1.0, 0.15, 0.5)
-        },
-        {
-            title: "📡 Airbag Sensor & DERM Module",
-            section: "Step 7 of 8 — Restraint System",
-            description: "Front impact sensors and the Diagnostic Energy Reserve Module (DERM) are located in the engine bay. The DERM stores reserve energy for airbag deployment even if the 12V battery is cut.\n\nThe Equinox EV has 8 airbags total. After LV cut, the DERM reserve allows deployment for approximately 10 seconds — do NOT work in front airbag zones during this window.",
-            highlight: "After cutting LV cables: DO NOT position yourself in front of the steering wheel or instrument panel for at least 10 seconds.",
-            warning: null,
-            matrix: posToMatrix(0.0, 0.05, -0.5)
-        },
-        {
-            title: "✅ Engine Bay Safety Checklist",
-            section: "Step 8 of 8 — Pre-Work Verification",
-            description: "Before any extrication or cutting operations:\n\n1️⃣ Vehicle in PARK, EPB engaged, wheels blocked\n2️⃣ Charging cable removed (if connected)\n3️⃣ MSD pulled (if accessible)\n4️⃣ LV cable double-cut both sides of yellow tape — section removed\n5️⃣ Waited 10 seconds (airbag reserve) ✓\n6️⃣ Waited 60 seconds (HV capacitor discharge) ✓\n7️⃣ Confirmed NO orange cable was cut ✓\n8️⃣ SCBA on if any smoke or odor is present",
-            highlight: "If 'Battery Danger Detected' is active: skip Step 4 unless extrication absolutely requires airbag disablement.",
-            warning: "Always wear Self-Contained Breathing Apparatus (SCBA) if battery fumes or smoke are present.",
-            matrix: defaultViewMatrix
-        }
-    ],
     "EQUINOXREFINE_FINAL": [
         {
             title: "🔍 Vehicle Overview",
-            section: "Stop 1 of 8 — Full Exterior",
+            section: "Stop 1 of 3 — Full Exterior",
             description: "Full exterior view of the Chevrolet Equinox EV. This battery-electric vehicle operates on high-voltage DC power (400V+). Before any inspection, confirm the vehicle is in PARK, key fob removed, and 12V auxiliary battery disconnected. Orange-jacketed cables indicate HV circuits — never cut or touch them.",
             highlight: "⚠️ The vehicle can be SILENT and still fully energized. Always assume HV systems are live until formally isolated.",
             warning: null,
-            matrix: [-0.936, -0.091, -0.339, 0, 0.0, 0.966, -0.259, 0, 0.351, -0.243, -0.904, 0, -0.105, 0.765, 3.624, 1]
+            matrix: [0.92,0.05,-0.38,0,0,0.99,0.12,0,0.38,-0.11,0.91,0,-0.06,0.75,1.08,1]
         },
         {
-            title: "⚡ Front Bumper & Radar Sensor",
-            section: "Stop 2 of 8 — Front Fascia",
-            description: "The front fascia houses the forward-facing millimeter-wave radar (center grille) and front-facing camera behind the windshield. Both feed the Super Cruise ADAS system. Do not apply paint, adhesives, or decals to these zones — even minor obstructions degrade sensor accuracy and may require dealer recalibration.",
-            highlight: "Stone chips or fascia deformation in the radar zone require a full ADAS recalibration before the vehicle is returned to service.",
-            warning: null,
-            matrix: [-1.0, -0.004, -0.016, 0, 0.0, 0.973, -0.23, 0, 0.016, -0.23, -0.973, 0, -0.061, 1.167, 3.628, 1]
-        },
-        {
-            title: "🚗 Driver Side — Diagnostic & HV Routing",
-            section: "Stop 3 of 8 — Driver Side",
-            description: "The OBD-II diagnostic port is located beneath the driver-side instrument panel. The driver door sill carries the VIN label and tire pressure specs. Inspect door seal integrity — water ingress into the HV battery tray triggers a safety fault. The orange HV cable conduit runs along the rocker panel floor.",
-            highlight: "Door seal failure is a safety-critical fault — report any ingress immediately.",
+            title: "⚡ Front Bumper",
+            section: "Stop 2 of 3 — Front Fascia",
+            description: "The front fascia is a critical area for first responders. The HV battery warning label is located under the center front compartment sight shield on the center of the air inlet grill panel. The 12V auxiliary battery is located in the engine bay — cutting the 12V cable disables both the airbag system and the HV contactors.\n\nHood release: pull the handle on the lower left side of the instrument panel.",
+            highlight: "Orange HV cables visible in the engine bay are energized even with the vehicle OFF. Do NOT cut them.",
             warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            matrix: [0.0, 0.225, 0.974, 0, 0.0, 0.974, -0.225, 0, -1.0, 0.0, 0.0, 0, 0.22, 0.728, 2.706, 1]
+            matrix: [0.99,-0.04,-0.11,0,0.04,1,0.02,0,0.11,-0.03,0.99,0,0.51,1.06,4.1,1]
         },
         {
-            title: "🔌 DC Fast Charging Port (CCS1)",
-            section: "Stop 4 of 8 — Charging System",
-            description: "The Combined Charging System (CCS1) port is in the driver-side rear quarter panel. It supports AC Level 1/2 (via J1772 adapter) and DC Fast Charge up to 150 kW. Inspect the charge door actuator, port pins for corrosion or bend damage, and the proximity/pilot contacts. The port locks automatically when charging — never force it open.",
-            highlight: "If the vehicle is connected to a charger at a crash scene — remove the charge handle FIRST before any other action.",
+            title: "🔌 Charging Port (CCS1)",
+            section: "Stop 3 of 3 — Charging System",
+            description: "The Combined Charging System (CCS1) port is located on the driver-side rear quarter panel. It supports AC Level 1/2 and DC Fast Charge up to 150 kW.\n\nAt a crash scene: if the vehicle is connected to a charger, remove the charge handle from the vehicle FIRST before any other action. The common handle disconnects normally; the DC Fast Charge handle is larger and may require additional effort. The vehicle's anti-theft alarm may activate when the charge handle is removed.",
+            highlight: "Remove the charge handle FIRST — before cutting any cables or beginning extrication.",
             warning: null,
-            matrix: [-0.254, 0.345, 0.903, 0, 0.0, 0.934, -0.357, 0, -0.967, -0.091, -0.238, 0, -0.926, 0.648, 2.259, 1]
-        },
-        {
-            title: "🔴 Rear End — HV Labels & Battery Pan",
-            section: "Stop 5 of 8 — Rear",
-            description: "Rear lamps use full LED arrays. The liftgate backup camera feeds the Surround Vision system. High-voltage warning stickers on the rear valance are required by FMVSS. The rear underbody panel seals the Ultium battery pack — any crash deformation here warrants a battery inspection before driving.",
-            highlight: "Check HV warning labels are intact and legible. Missing or damaged labels must be replaced before releasing the vehicle.",
-            warning: null,
-            matrix: [1.0, -0.003, -0.013, 0, -0.0, 0.963, -0.268, 0, 0.013, 0.268, 0.963, 0, 0.05, 1.115, 3.634, 1]
-        },
-        {
-            title: "🔋 Passenger Side — Ultium Pack Venting",
-            section: "Stop 6 of 8 — Passenger Side",
-            description: "The Ultium HV battery pack vent path runs along the passenger-side rocker panel. Inspect for body damage that may compromise the side-curtain airbag deployment channel in the B-pillar. The side-facing Surround Vision camera is housed in the passenger mirror cap.",
-            highlight: "Rocker panel damage directly above the battery vent path must be assessed before returning to service.",
-            warning: null,
-            matrix: [0.0, -0.221, -0.975, 0, -0.0, 0.975, -0.221, 0, 1.0, 0.0, 0.0, 0, -0.22, 0.715, 2.709, 1]
-        },
-        {
-            title: "📡 Roof — Cameras & GNSS Antenna",
-            section: "Stop 7 of 8 — Roof",
-            description: "The forward camera module sits at the top of the windshield (black housing). It provides lane-centering, auto-emergency braking, and Super Cruise LiDAR map matching. The roof antenna array handles GNSS, cellular, and V2X (Vehicle-to-Everything) communications. Any roof replacement requires full ADAS recalibration.",
-            highlight: "Roof damage or panel replacement always triggers a mandatory ADAS recalibration before the vehicle can be operated in Super Cruise mode.",
-            warning: null,
-            matrix: [-1.0, -0.012, -0.012, 0, 0.0, 0.727, -0.686, 0, 0.017, -0.686, -0.727, 0, -0.034, 0.282, 2.484, 1]
-        },
-        {
-            title: "🔧 ADAS Cluster — Front Left",
-            section: "Stop 8 of 8 — Sensor Calibration",
-            description: "The front-left corner hosts a 360° ultrasonic parking sensor and the left forward-looking camera (Blind Zone Alert / Lane Change Alert). Per SAE J3212, all sensors in this zone require static calibration to certified targets before vehicle release after any front-left body repair. Recheck alignment any time a front-left panel is replaced.",
-            highlight: "Release checklist: radar calibrated ✓ | front camera calibrated ✓ | ultrasonic sensors functional ✓ | road-test lane-keeping verified ✓",
-            warning: null,
-            matrix: [-0.954, 0.061, 0.292, 0, 0.0, 0.979, -0.204, 0, -0.298, -0.195, -0.934, 0, 0.28, 0.927, 3.463, 1]
-        }
-    ],
-    "Equinox": [
-        {
-            title: "🔍 EV Identification & PPE",
-            section: "Section 1 — Identification",
-            description: "Always advise Dispatch and all responders that an electric vehicle is involved. The Chevrolet Equinox EV wears the Chevy logo on the hood and rear liftgate, and an 'Equinox EV' emblem on the front doors and left side of the liftgate.",
-            highlight: "⚠️ Lack of engine noise does NOT mean the vehicle is off — movement capability exists until the vehicle is fully shut down. Always wear appropriate PPE.",
-            warning: null,
-            matrix: defaultViewMatrix
-        },
-        {
-            title: "🔋 High Voltage Battery",
-            section: "Section 1 — HV Battery",
-            description: "The HV battery is a Class B Lithium-Ion pack mounted under the vehicle. It is a structural component integrated into the floor pan. A battery warning label is located under the center front compartment sight shield, on the center of the air inlet grill panel.",
-            highlight: "The HV system can remain energized even when the vehicle is in the OFF state. Treat all orange-cabled components as live.",
-            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            matrix: posToMatrix(1.0, -1.0, -1.8)
-        },
-        {
-            title: "🅿️ Immobilization & Lifting Points",
-            section: "Section 2 — Stabilization",
-            description: "Block the wheels. To apply the Electric Parking Brake (EPB), press the EPB switch momentarily — the red status light flashes then stays on. To shift to Park, press the button at the end of the shift lever. This vehicle has NO power button; it powers off in Park when a driver exit is detected.",
-            highlight: "Lifting points are features on the body of the vehicle only. Do NOT lift from any location on the high voltage battery.",
-            warning: null,
-            matrix: posToMatrix(2.10, -1.61, -2.55)
-        },
-        {
-            title: "🔌 Charging — Disconnect First",
-            section: "Section 3 — Direct Hazards",
-            description: "If the vehicle is at a charge station, terminate charging by removing the charge handle from the vehicle first. The common charge handle disconnects normally; the DC Fast Charge handle is larger and may require additional effort. It may also be appropriate to terminate charging at the station.",
-            highlight: "If enabled, the vehicle's anti-theft alarm may activate when the charge handle is removed.",
-            warning: null,
-            matrix: posToMatrix(-0.6, -1.5, -2.6)
-        },
-        {
-            title: "🔒 Hood Release & Low Voltage Cut",
-            section: "Section 3 — Direct Hazards",
-            description: "Hood release: Pull the handle on the lower left side of the instrument panel. Low Voltage Cut: Double cut the LV cables on both sides of the yellow tape and remove the cut section. This disables the airbags and high voltage system. Wait 10 seconds for airbag reserve energy to dissipate, then 1 minute for HV to discharge.",
-            highlight: "Cutting low voltage power disables the airbags AND the HV contactor system.",
-            warning: "NEVER cut the low voltage system during an active 'Battery Danger Detected' thermal runaway cycle — unless you must disable airbags for occupant extrication.",
-            matrix: posToMatrix(1.23, -1.88, -1.49)
-        },
-        {
-            title: "🌡️ Thermal Runaway Mitigation",
-            section: "Section 3 — Thermal Runaway",
-            description: "The vehicle has an internal battery management system with fault detection. When a 'Battery Danger Detected' notification appears, automatic safeguards activate — including an internal cooling system that activates when low voltage power is available. OnStar Advisors will contact first responders.",
-            highlight: "The vehicle activates its horn and hazard lights automatically when thermal runaway mitigation begins. Watch for this signal.",
-            warning: "Do NOT disable the 12V/low voltage system during thermal runaway mitigation unless occupant extrication requires airbag disablement.",
-            matrix: posToMatrix(1.13, -1.44, -0.74)
-        },
-        {
-            title: "🚪 Vehicle Access — Doors & Glass",
-            section: "Section 4 — Occupant Access",
-            description: "Windshield: Laminated glass. Door windows, rear quarter, liftgate window, and sunroof: Tempered glass. Door handles are power-operated — they require the key to approach, doors to be unlocked, the deploy switch to be pressed, or a door to open/close. If locked from inside, pull twice on the inside door handle at each seating location.",
-            highlight: "Rear passenger access may require an alternative method if rear door child safety locks are engaged.",
-            warning: null,
-            matrix: posToMatrix(0.4, -1.7, -2.5)
-        },
-        {
-            title: "💥 Airbag & Restraint Locations",
-            section: "Section 4 — Restraints",
-            description: "The Equinox EV is equipped with 8 airbags: Driver (steering wheel), Front Passenger (instrument panel), 2× Front Knee Bolster, 2× Front Seat Outboard, 2× Roof Rail. Seat belts for 5 occupants. Front seats have 2 pretensioners each (retractor-mounted + seat anchor). Rear outboard: 1 pretensioner each.",
-            highlight: "After cutting low voltage: wait at least 10 seconds before working near airbag deployment zones to allow reserve energy to dissipate.",
-            warning: null,
-            matrix: posToMatrix(0.7, -1.85, -1.3)
-        },
-        {
-            title: "🔥 Fire & Submersion Response",
-            section: "Sections 6–7 — Fire / Submersion",
-            description: "FIRE: A battery on fire will NOT explode, but cells vent flammable electrolyte at high temperature. Gases are toxic; use SCBA at all times. Use copious amounts of water to cool and extinguish. Do NOT use ABC dry chemical — it will not extinguish a battery fire. Watch for re-ignition.\n\nSUBMERSION: The HV battery is isolated from the chassis — no electrocution risk from touching the vehicle in water. After removal: let dry, then perform the HV disabling procedure (Section 3).",
-            highlight: "Potential for battery re-ignition even after apparent extinguishment. Monitor and maintain water application.",
-            warning: "Always wear Self-Contained Breathing Apparatus (SCBA) near a burning EV battery.",
-            matrix: defaultViewMatrix
-        },
-        {
-            title: "🚛 Towing, Storage & OnStar",
-            section: "Sections 8–9 — Recovery",
-            description: "Use a flatbed carrier or tow dollies. Moving with drive wheels on the ground generates unwanted electrical energy — minimize any rolling distance. Tow hook: open the fascia cover using the small notch, install the tow eye and tighten. Store the damaged vehicle at least 15 meters (50 feet) from other vehicles.\n\nThis vehicle is supported by OnStar. After a 'Battery Danger Detected' event, wait up to 1 hour before towing, even if no smoke or odor is visible.",
-            highlight: "Post-crash battery hazards (rekindling, re-gassing) can persist during towing and storage. Handle with care.",
-            warning: null,
-            matrix: posToMatrix(-0.5, -1.4, -2.8)
-        }
-    ],
-    "Blazer": [
-        {
-            title: "🔍 EV Identification — Blazer EV PPV",
-            section: "Section 1 — Identification",
-            description: "Identify the Blazer EV by its Chevy bowtie logo and 'Blazer EV' badging. As with all EVs, the vehicle may be silent but still have movement capability until fully shut down. Always advise dispatch and wear appropriate PPE.",
-            highlight: "Lack of engine noise does NOT mean the vehicle is off. Always assume the vehicle can move until confirmed in Park.",
-            warning: null,
-            matrix: defaultViewMatrix
-        },
-        {
-            title: "🔋 High Voltage System",
-            section: "Section 1 — HV Battery",
-            description: "The Blazer EV uses a High Voltage Lithium-Ion battery pack. Treat all orange high-voltage cables as energized at all times. The HV system can remain energized even with the vehicle off.",
-            highlight: "DO NOT CUT orange high-voltage cables.",
-            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            matrix: posToMatrix(2.10, -1.61, -2.55)
-        },
-        {
-            title: "🔒 Low Voltage Cut & Hazard Disable",
-            section: "Section 3 — Direct Hazards",
-            description: "Double cut the low voltage cables on both sides of the yellow tape and remove the cut section. This disables the airbags and HV contactors. Wait 10 seconds for airbag reserve energy and 1 minute for HV discharge before working near these systems.",
-            highlight: "Always verify the low voltage system is disabled before cutting or moving near high voltage components.",
-            warning: null,
-            matrix: posToMatrix(1.23, -1.88, -1.49)
-        }
-    ],
-    "ETransit": [
-        {
-            title: "🔍 EV Identification — Ford E-Transit",
-            section: "Section 1 — Identification",
-            description: "Identify the Ford E-Transit by its Ford oval logo and EV badging. Advise dispatch that an electric vehicle is involved. The vehicle may be silent but can still move. Always wear appropriate PPE.",
-            highlight: "Lack of engine noise does NOT mean the vehicle is off.",
-            warning: null,
-            matrix: defaultViewMatrix
-        },
-        {
-            title: "🔒 Low Voltage Cut & HV Safety",
-            section: "Section 3 — Direct Hazards",
-            description: "Follow the manufacturer's low voltage disable procedure. Double cut LV cables on both sides of the yellow tape, remove the cut section, then wait 10 seconds before working near airbags and 1 minute before approaching HV components. Treat all orange HV cables as energized.",
-            highlight: "DO NOT CUT orange high-voltage cables.",
-            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            matrix: posToMatrix(1.23, -1.88, -1.49)
+            matrix: [0.99,-0.04,-0.11,0,0.04,1,0.02,0,0.11,-0.03,0.99,0,0.51,1.06,4.1,1]
         }
     ]
 };
@@ -520,63 +288,6 @@ async function main() {
     // --- INTEGRATED 3D ANNOTATIONS SYSTEM ---
     const vehicleAnnotations = [
         {
-            id: "12V Battery",
-            position: [3.14, -3.11, -2.86],
-            title: "⚡ 12V Lead Acid Battery",
-            description: "Cutting the 12V low voltage system disables the HV contactors and airbags. Double-cut both sides of the yellow tape and remove the cut section.\n\nWait: 10 sec (airbag reserve) → 1 min (HV discharge).",
-            warning: "Do NOT cut during active 'Battery Danger Detected' thermal runaway cycle unless airbag disable is required for extrication.",
-            targetUrlSnippet: "Chevrolet Equinox EV (Hood Open)"
-        },
-        {
-            id: "LV Cut Location",
-            position: [2.85, -3.25, -2.65],
-            title: "✂️ Low Voltage Cut Location",
-            description: "Double cut the LV cable on BOTH sides of the yellow tape and remove the cut section entirely. Ensure cuts are clean with no loose wires that could reconnect.\n\nThis cut simultaneously disables: Airbag system & HV contactors.",
-            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            targetUrlSnippet: "Chevrolet Equinox EV (Hood Open)"
-        },
-        {
-            id: "HV Battery Label",
-            position: [1.9, -3.05, -2.4],
-            title: "🔋 HV Battery Warning Label",
-            description: "The battery warning label is located under the center front compartment sight shield on the center of the air inlet grill panel.\n\nThe HV battery is a Class B Li-Ion pack mounted under the vehicle as a structural floor component. The HV system may remain energized even when the vehicle is OFF.",
-            warning: null,
-            targetUrlSnippet: "Chevrolet Equinox EV (Hood Open)"
-        },
-        {
-            id: "Thermal Runaway",
-            position: [2.5, -3.4, -2.2],
-            title: "🌡️ Thermal Runaway Mitigation System",
-            description: "When 'Battery Danger Detected' appears, an internal cooling system activates automatically (when low voltage power is present). OnStar contacts first responders. The vehicle activates its horn and hazard lights as a warning signal.\n\nKeep low voltage power connected during thermal runaway mitigation.",
-            warning: "Do NOT disable 12V system during thermal runaway — unless occupant extrication requires airbag disablement.",
-            targetUrlSnippet: "Chevrolet Equinox EV (Hood Open)"
-        },
-        {
-            id: "Airbags",
-            position: [1.5, -3.6, -1.8],
-            title: "💥 8 Airbag Locations",
-            description: "The Equinox EV has 8 airbags:\n• Driver — steering wheel\n• Front Passenger — instrument panel\n• 2× Front Knee Bolster\n• 2× Front Seat Outboard\n• 2× Roof Rail\n\nAfter LV cut: wait 10 seconds before working near deployment zones.",
-            warning: null,
-            targetUrlSnippet: "Equinox EV (Hood Open)"
-        },
-        {
-            id: "Lifting Points",
-            position: [0.8, -3.5, -2.8],
-            title: "🔧 Lifting Points",
-            description: "Use body-feature lifting points ONLY. Do NOT lift the vehicle from any location on the high voltage battery.\n\nThe HV battery is a structural part of the floor pan — improper lifting can damage it and create a hazard.",
-            warning: "Never lift from HV battery locations. Body features only.",
-            targetUrlSnippet: "Equinox EV (Hood Closed)"
-        },
-        {
-            id: "Charge Port",
-            position: [-0.5, -3.2, -2.5],
-            title: "🔌 Charge Port",
-            description: "If the vehicle is connected to a charge station: remove the charge handle from the vehicle first. Consider also terminating power at the charging station.\n\nCommon handle disconnects normally. DC Fast Charge handle is larger and may require additional effort to disconnect.",
-            warning: "Disconnecting may trigger the vehicle's anti-theft alarm.",
-            targetUrlSnippet: "Equinox EV (Hood Closed)"
-        },
-        // --- EQUINOXREFINE_FINAL annotations ---
-        {
             id: "RF_BatteryWarningLabel",
             position: [0.43, -0.87, -0.88],
             title: "🟡 HV Battery Warning Label",
@@ -592,46 +303,13 @@ async function main() {
             warning: "NEVER cut the 12V cable during an active 'Battery Danger Detected' thermal runaway event — unless occupant extrication requires airbag disablement.",
             targetUrlSnippet: "EQUINOXREFINE_FINAL"
         },
-        // --- Engine Bay Merged Scan Annotations ---
         {
-            id: "EB_DriveUnit",
-            position: [0.0, 0.1, 0.2],
-            title: "⚡ Drive Unit (Motor + Inverter)",
-            description: "The electric drive unit occupies most of the engine bay. Contains the 3-phase AC motor and inverter module. Orange HV cables connect to the HV battery pack beneath the vehicle floor.",
-            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            targetUrlSnippet: "enginebay_merged"
-        },
-        {
-            id: "EB_12VBattery",
-            position: [0.9, 0.15, 0.3],
-            title: "🔋 12V Auxiliary Battery",
-            description: "Lead-acid 12V battery powering conventional systems and — critically — the HV contactors. Double-cut LV cable on BOTH sides of yellow tape to disable HV contactors and airbags.\n\nWait 10 sec (airbags) then 60 sec (HV discharge).",
-            warning: "NEVER cut 12V during active thermal runaway mitigation.",
-            targetUrlSnippet: "enginebay_merged"
-        },
-        {
-            id: "EB_HVJunction",
-            position: [-0.3, 0.12, 0.5],
-            title: "🟠 HV Junction Box",
-            description: "Routes 400V+ DC power between battery, drive unit, and onboard charger. All orange cables in this zone are energized even with the vehicle off.\n\nHV warning label is on the air inlet grill center panel.",
-            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            targetUrlSnippet: "enginebay_merged"
-        },
-        {
-            id: "EB_MSD",
-            position: [-0.6, 0.08, 0.0],
-            title: "🔴 Manual Service Disconnect",
-            description: "Physically isolates HV battery mid-pack. Lift the MSD cover and pull upward to remove the plug — this mechanically breaks the HV circuit.\n\nAfter MSD removal: wait 60 seconds for capacitor discharge before any work near HV components.",
-            warning: "MSD alone does NOT disable airbags. Also perform LV cable cut.",
-            targetUrlSnippet: "enginebay_merged"
-        },
-        {
-            id: "EB_Coolant",
-            position: [-1.0, 0.15, 0.5],
-            title: "🌡️ Thermal Management Coolant",
-            description: "Liquid cooling system for HV battery and drive unit. Activates automatically during thermal runaway if 12V power is present.\n\nDo NOT cut coolant hoses — do not confuse them with HV cables.",
-            warning: null,
-            targetUrlSnippet: "enginebay_merged"
+            id: "RF_ChargePort",
+            position: [0.709, -0.758, -0.685],
+            title: "🔌 Charging Port (CCS1)",
+            description: "The Combined Charging System (CCS1) port is located on the driver-side rear quarter panel. It supports AC Level 1 (120V), Level 2 (240V), and DC Fast Charge up to 150 kW.\n\nAt a crash scene: if the vehicle is connected to a charger, remove the charge handle from the vehicle FIRST before any other action.\n\nThe common J1772 handle disconnects normally. The DC Fast Charge handle is larger and may require additional effort to disconnect. The port locks automatically while charging — never force it.",
+            warning: "Disconnecting the charge handle may trigger the vehicle's anti-theft alarm.",
+            targetUrlSnippet: "EQUINOXREFINE_FINAL"
         }
     ];
 
