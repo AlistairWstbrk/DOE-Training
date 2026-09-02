@@ -161,9 +161,130 @@ function posToMatrix(x, y, z) { return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -x, 
 
 const tourDatabase = {
     "Equinox": [
-        { title: "Position 1: Front Exterior & Hood View", description: "Initial alignment view focusing on the front fascia and open hood aperture.", matrix: posToMatrix(2.10, -1.61, -2.55) },
-        { title: "Position 2: Mid-Range Engine Bay Focus", description: "Secondary angle capturing structural components and main high-voltage housing under the hood.", matrix: posToMatrix(1.23, -1.88, -1.49) },
-        { title: "Position 3: Component Close-Up", description: "Detailed inspection view for close-range spatial mapping and component identification.", matrix: posToMatrix(1.13, -1.44, -0.74) }
+        {
+            title: "🔍 EV Identification & PPE",
+            section: "Section 1 — Identification",
+            description: "Always advise Dispatch and all responders that an electric vehicle is involved. The Chevrolet Equinox EV wears the Chevy logo on the hood and rear liftgate, and an 'Equinox EV' emblem on the front doors and left side of the liftgate.",
+            highlight: "⚠️ Lack of engine noise does NOT mean the vehicle is off — movement capability exists until the vehicle is fully shut down. Always wear appropriate PPE.",
+            warning: null,
+            matrix: defaultViewMatrix
+        },
+        {
+            title: "🔋 High Voltage Battery",
+            section: "Section 1 — HV Battery",
+            description: "The HV battery is a Class B Lithium-Ion pack mounted under the vehicle. It is a structural component integrated into the floor pan. A battery warning label is located under the center front compartment sight shield, on the center of the air inlet grill panel.",
+            highlight: "The HV system can remain energized even when the vehicle is in the OFF state. Treat all orange-cabled components as live.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            matrix: posToMatrix(1.0, -1.0, -1.8)
+        },
+        {
+            title: "🅿️ Immobilization & Lifting Points",
+            section: "Section 2 — Stabilization",
+            description: "Block the wheels. To apply the Electric Parking Brake (EPB), press the EPB switch momentarily — the red status light flashes then stays on. To shift to Park, press the button at the end of the shift lever. This vehicle has NO power button; it powers off in Park when a driver exit is detected.",
+            highlight: "Lifting points are features on the body of the vehicle only. Do NOT lift from any location on the high voltage battery.",
+            warning: null,
+            matrix: posToMatrix(2.10, -1.61, -2.55)
+        },
+        {
+            title: "🔌 Charging — Disconnect First",
+            section: "Section 3 — Direct Hazards",
+            description: "If the vehicle is at a charge station, terminate charging by removing the charge handle from the vehicle first. The common charge handle disconnects normally; the DC Fast Charge handle is larger and may require additional effort. It may also be appropriate to terminate charging at the station.",
+            highlight: "If enabled, the vehicle's anti-theft alarm may activate when the charge handle is removed.",
+            warning: null,
+            matrix: posToMatrix(-0.6, -1.5, -2.6)
+        },
+        {
+            title: "🔒 Hood Release & Low Voltage Cut",
+            section: "Section 3 — Direct Hazards",
+            description: "Hood release: Pull the handle on the lower left side of the instrument panel. Low Voltage Cut: Double cut the LV cables on both sides of the yellow tape and remove the cut section. This disables the airbags and high voltage system. Wait 10 seconds for airbag reserve energy to dissipate, then 1 minute for HV to discharge.",
+            highlight: "Cutting low voltage power disables the airbags AND the HV contactor system.",
+            warning: "NEVER cut the low voltage system during an active 'Battery Danger Detected' thermal runaway cycle — unless you must disable airbags for occupant extrication.",
+            matrix: posToMatrix(1.23, -1.88, -1.49)
+        },
+        {
+            title: "🌡️ Thermal Runaway Mitigation",
+            section: "Section 3 — Thermal Runaway",
+            description: "The vehicle has an internal battery management system with fault detection. When a 'Battery Danger Detected' notification appears, automatic safeguards activate — including an internal cooling system that activates when low voltage power is available. OnStar Advisors will contact first responders.",
+            highlight: "The vehicle activates its horn and hazard lights automatically when thermal runaway mitigation begins. Watch for this signal.",
+            warning: "Do NOT disable the 12V/low voltage system during thermal runaway mitigation unless occupant extrication requires airbag disablement.",
+            matrix: posToMatrix(1.13, -1.44, -0.74)
+        },
+        {
+            title: "🚪 Vehicle Access — Doors & Glass",
+            section: "Section 4 — Occupant Access",
+            description: "Windshield: Laminated glass. Door windows, rear quarter, liftgate window, and sunroof: Tempered glass. Door handles are power-operated — they require the key to approach, doors to be unlocked, the deploy switch to be pressed, or a door to open/close. If locked from inside, pull twice on the inside door handle at each seating location.",
+            highlight: "Rear passenger access may require an alternative method if rear door child safety locks are engaged.",
+            warning: null,
+            matrix: posToMatrix(0.4, -1.7, -2.5)
+        },
+        {
+            title: "💥 Airbag & Restraint Locations",
+            section: "Section 4 — Restraints",
+            description: "The Equinox EV is equipped with 8 airbags: Driver (steering wheel), Front Passenger (instrument panel), 2× Front Knee Bolster, 2× Front Seat Outboard, 2× Roof Rail. Seat belts for 5 occupants. Front seats have 2 pretensioners each (retractor-mounted + seat anchor). Rear outboard: 1 pretensioner each.",
+            highlight: "After cutting low voltage: wait at least 10 seconds before working near airbag deployment zones to allow reserve energy to dissipate.",
+            warning: null,
+            matrix: posToMatrix(0.7, -1.85, -1.3)
+        },
+        {
+            title: "🔥 Fire & Submersion Response",
+            section: "Sections 6–7 — Fire / Submersion",
+            description: "FIRE: A battery on fire will NOT explode, but cells vent flammable electrolyte at high temperature. Gases are toxic; use SCBA at all times. Use copious amounts of water to cool and extinguish. Do NOT use ABC dry chemical — it will not extinguish a battery fire. Watch for re-ignition.\n\nSUBMERSION: The HV battery is isolated from the chassis — no electrocution risk from touching the vehicle in water. After removal: let dry, then perform the HV disabling procedure (Section 3).",
+            highlight: "Potential for battery re-ignition even after apparent extinguishment. Monitor and maintain water application.",
+            warning: "Always wear Self-Contained Breathing Apparatus (SCBA) near a burning EV battery.",
+            matrix: defaultViewMatrix
+        },
+        {
+            title: "🚛 Towing, Storage & OnStar",
+            section: "Sections 8–9 — Recovery",
+            description: "Use a flatbed carrier or tow dollies. Moving with drive wheels on the ground generates unwanted electrical energy — minimize any rolling distance. Tow hook: open the fascia cover using the small notch, install the tow eye and tighten. Store the damaged vehicle at least 15 meters (50 feet) from other vehicles.\n\nThis vehicle is supported by OnStar. After a 'Battery Danger Detected' event, wait up to 1 hour before towing, even if no smoke or odor is visible.",
+            highlight: "Post-crash battery hazards (rekindling, re-gassing) can persist during towing and storage. Handle with care.",
+            warning: null,
+            matrix: posToMatrix(-0.5, -1.4, -2.8)
+        }
+    ],
+    "Blazer": [
+        {
+            title: "🔍 EV Identification — Blazer EV PPV",
+            section: "Section 1 — Identification",
+            description: "Identify the Blazer EV by its Chevy bowtie logo and 'Blazer EV' badging. As with all EVs, the vehicle may be silent but still have movement capability until fully shut down. Always advise dispatch and wear appropriate PPE.",
+            highlight: "Lack of engine noise does NOT mean the vehicle is off. Always assume the vehicle can move until confirmed in Park.",
+            warning: null,
+            matrix: defaultViewMatrix
+        },
+        {
+            title: "🔋 High Voltage System",
+            section: "Section 1 — HV Battery",
+            description: "The Blazer EV uses a High Voltage Lithium-Ion battery pack. Treat all orange high-voltage cables as energized at all times. The HV system can remain energized even with the vehicle off.",
+            highlight: "DO NOT CUT orange high-voltage cables.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            matrix: posToMatrix(2.10, -1.61, -2.55)
+        },
+        {
+            title: "🔒 Low Voltage Cut & Hazard Disable",
+            section: "Section 3 — Direct Hazards",
+            description: "Double cut the low voltage cables on both sides of the yellow tape and remove the cut section. This disables the airbags and HV contactors. Wait 10 seconds for airbag reserve energy and 1 minute for HV discharge before working near these systems.",
+            highlight: "Always verify the low voltage system is disabled before cutting or moving near high voltage components.",
+            warning: null,
+            matrix: posToMatrix(1.23, -1.88, -1.49)
+        }
+    ],
+    "ETransit": [
+        {
+            title: "🔍 EV Identification — Ford E-Transit",
+            section: "Section 1 — Identification",
+            description: "Identify the Ford E-Transit by its Ford oval logo and EV badging. Advise dispatch that an electric vehicle is involved. The vehicle may be silent but can still move. Always wear appropriate PPE.",
+            highlight: "Lack of engine noise does NOT mean the vehicle is off.",
+            warning: null,
+            matrix: defaultViewMatrix
+        },
+        {
+            title: "🔒 Low Voltage Cut & HV Safety",
+            section: "Section 3 — Direct Hazards",
+            description: "Follow the manufacturer's low voltage disable procedure. Double cut LV cables on both sides of the yellow tape, remove the cut section, then wait 10 seconds before working near airbags and 1 minute before approaching HV components. Treat all orange HV cables as energized.",
+            highlight: "DO NOT CUT orange high-voltage cables.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            matrix: posToMatrix(1.23, -1.88, -1.49)
+        }
     ]
 };
 
@@ -181,8 +302,9 @@ async function main() {
         const msg = document.getElementById("message"); msg.innerText = "Please select a vehicle scan from the menu."; msg.style.color = "white"; msg.style.background = "rgba(0,0,0,0.5)"; msg.style.padding = "20px"; msg.style.borderRadius = "10px"; return; 
     }
 
+    const decodedUrlParam = decodeURIComponent(urlParam);
     for (let key in tourDatabase) {
-        if (decodeURIComponent(urlParam).includes(key)) { activeTourFrames = tourDatabase[key]; break; }
+        if (decodedUrlParam.includes(key)) { activeTourFrames = tourDatabase[key]; break; }
     }
 
     // --- INTEGRATED 3D ANNOTATIONS SYSTEM ---
@@ -190,9 +312,58 @@ async function main() {
         {
             id: "12V Battery",
             position: [3.14, -3.11, -2.86],
-            title: "12V Battery",
-            description: "For First Responders: Disconnecting the 12V system disables the High Voltage contactors and airbags. If 'Battery Danger Detected' is active, do not cut the 12V system during the thermal runaway mitigation cycle unless occupant extrication requires airbag disablement. Treat all high voltage components as energized.",
+            title: "⚡ 12V Lead Acid Battery",
+            description: "Cutting the 12V low voltage system disables the HV contactors and airbags. Double-cut both sides of the yellow tape and remove the cut section.\n\nWait: 10 sec (airbag reserve) → 1 min (HV discharge).",
+            warning: "Do NOT cut during active 'Battery Danger Detected' thermal runaway cycle unless airbag disable is required for extrication.",
             targetUrlSnippet: "Chevrolet Equinox EV (Hood Open)"
+        },
+        {
+            id: "LV Cut Location",
+            position: [2.85, -3.25, -2.65],
+            title: "✂️ Low Voltage Cut Location",
+            description: "Double cut the LV cable on BOTH sides of the yellow tape and remove the cut section entirely. Ensure cuts are clean with no loose wires that could reconnect.\n\nThis cut simultaneously disables: Airbag system & HV contactors.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            targetUrlSnippet: "Chevrolet Equinox EV (Hood Open)"
+        },
+        {
+            id: "HV Battery Label",
+            position: [1.9, -3.05, -2.4],
+            title: "🔋 HV Battery Warning Label",
+            description: "The battery warning label is located under the center front compartment sight shield on the center of the air inlet grill panel.\n\nThe HV battery is a Class B Li-Ion pack mounted under the vehicle as a structural floor component. The HV system may remain energized even when the vehicle is OFF.",
+            warning: null,
+            targetUrlSnippet: "Chevrolet Equinox EV (Hood Open)"
+        },
+        {
+            id: "Thermal Runaway",
+            position: [2.5, -3.4, -2.2],
+            title: "🌡️ Thermal Runaway Mitigation System",
+            description: "When 'Battery Danger Detected' appears, an internal cooling system activates automatically (when low voltage power is present). OnStar contacts first responders. The vehicle activates its horn and hazard lights as a warning signal.\n\nKeep low voltage power connected during thermal runaway mitigation.",
+            warning: "Do NOT disable 12V system during thermal runaway — unless occupant extrication requires airbag disablement.",
+            targetUrlSnippet: "Chevrolet Equinox EV (Hood Open)"
+        },
+        {
+            id: "Airbags",
+            position: [1.5, -3.6, -1.8],
+            title: "💥 8 Airbag Locations",
+            description: "The Equinox EV has 8 airbags:\n• Driver — steering wheel\n• Front Passenger — instrument panel\n• 2× Front Knee Bolster\n• 2× Front Seat Outboard\n• 2× Roof Rail\n\nAfter LV cut: wait 10 seconds before working near deployment zones.",
+            warning: null,
+            targetUrlSnippet: "Equinox EV (Hood Open)"
+        },
+        {
+            id: "Lifting Points",
+            position: [0.8, -3.5, -2.8],
+            title: "🔧 Lifting Points",
+            description: "Use body-feature lifting points ONLY. Do NOT lift the vehicle from any location on the high voltage battery.\n\nThe HV battery is a structural part of the floor pan — improper lifting can damage it and create a hazard.",
+            warning: "Never lift from HV battery locations. Body features only.",
+            targetUrlSnippet: "Equinox EV (Hood Closed)"
+        },
+        {
+            id: "Charge Port",
+            position: [-0.5, -3.2, -2.5],
+            title: "🔌 Charge Port",
+            description: "If the vehicle is connected to a charge station: remove the charge handle from the vehicle first. Consider also terminating power at the charging station.\n\nCommon handle disconnects normally. DC Fast Charge handle is larger and may require additional effort to disconnect.",
+            warning: "Disconnecting may trigger the vehicle's anti-theft alarm.",
+            targetUrlSnippet: "Equinox EV (Hood Closed)"
         }
     ];
 
@@ -203,7 +374,7 @@ async function main() {
         let decodedUrl = decodeURIComponent(urlParam || "");
         if (decodedUrl.includes(annoData.targetUrlSnippet)) {
             let el = document.createElement('div');
-            el.className = 'splat-marker'; 
+            el.className = 'splat-marker';
             el.innerHTML = `
                 <div class="anchor-point"></div>
                 <div class="connecting-line"></div>
@@ -211,6 +382,7 @@ async function main() {
                     <div class="close-btn">✖</div>
                     <div class="anno-title">${annoData.title}</div>
                     <div class="anno-details">${annoData.description}</div>
+                    ${annoData.warning ? `<div class="anno-warning">⚠️ ${annoData.warning}</div>` : ''}
                 </div>
             `;
             
@@ -358,18 +530,46 @@ async function main() {
         if (activeTourFrames.length === 0) {
             document.getElementById('tour-title').innerText = "No Tour Available";
             document.getElementById('tour-description').innerText = "A training walkthrough has not been mapped for this scan yet.";
+            document.getElementById('tour-section-tag').innerText = "";
             document.getElementById('tour-counter').innerText = "0 / 0";
+            document.getElementById('tour-highlight').style.display = 'none';
+            document.getElementById('tour-warning-box').style.display = 'none';
             document.getElementById('tour-prev').disabled = true;
+            document.getElementById('tour-next').innerText = "Next ▶";
             document.getElementById('tour-next').disabled = true;
             return;
         }
 
         const frame = activeTourFrames[currentTourIndex];
-        document.getElementById('tour-title').innerText = frame.title;
-        document.getElementById('tour-description').innerText = frame.description;
-        document.getElementById('tour-counter').innerText = `${currentTourIndex + 1} / ${activeTourFrames.length}`;
+        const total = activeTourFrames.length;
+
+        document.getElementById('tour-title').innerText = frame.title || "";
+        document.getElementById('tour-section-tag').innerText = frame.section || "";
+        document.getElementById('tour-description').innerText = frame.description || "";
+
+        const highlightEl = document.getElementById('tour-highlight');
+        if (frame.highlight) {
+            highlightEl.innerText = frame.highlight;
+            highlightEl.style.display = 'block';
+        } else {
+            highlightEl.style.display = 'none';
+        }
+
+        const warningEl = document.getElementById('tour-warning-box');
+        if (frame.warning) {
+            warningEl.innerText = "⚠️ " + frame.warning;
+            warningEl.style.display = 'block';
+        } else {
+            warningEl.style.display = 'none';
+        }
+
+        document.getElementById('tour-counter').innerText = `${currentTourIndex + 1} / ${total}`;
+        document.getElementById('tour-progress-fill').style.width = `${((currentTourIndex + 1) / total) * 100}%`;
+
         document.getElementById('tour-prev').disabled = currentTourIndex === 0;
-        document.getElementById('tour-next').disabled = currentTourIndex === activeTourFrames.length - 1;
+        const isLast = currentTourIndex === total - 1;
+        document.getElementById('tour-next').disabled = isLast;
+        document.getElementById('tour-next').innerText = isLast ? "✓ Finish" : "Next ▶";
     }
 
     function goToTourFrame(index) {

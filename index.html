@@ -48,17 +48,81 @@
             .st-slider { width: 100%; margin: 10px 0 15px 0; accent-color: #FF4B4B; }
             hr { border-top: 1px solid rgba(250, 250, 250, 0.1); border-bottom: none; margin: 24px 0; }
 
+            /* --- 3D ANNOTATION MARKERS --- */
+            .splat-marker { position: absolute; pointer-events: none; z-index: 500; display: none; }
+            .splat-marker.active { z-index: 600; }
+            .anchor-point {
+                position: absolute; top: 0; left: 0;
+                width: 14px; height: 14px;
+                background: #4B90FF; border: 2px solid white;
+                border-radius: 50%; transform: translate(-50%, -50%);
+                cursor: pointer; pointer-events: all;
+                box-shadow: 0 0 10px rgba(75,144,255,0.7), 0 0 0 4px rgba(75,144,255,0.2);
+                transition: transform 0.2s, box-shadow 0.2s;
+                animation: pulse-dot 2.5s infinite;
+            }
+            @keyframes pulse-dot {
+                0%,100% { box-shadow: 0 0 10px rgba(75,144,255,0.7), 0 0 0 4px rgba(75,144,255,0.2); }
+                50% { box-shadow: 0 0 14px rgba(75,144,255,0.9), 0 0 0 8px rgba(75,144,255,0.1); }
+            }
+            .anchor-point:hover { transform: translate(-50%,-50%) scale(1.4); }
+            .connecting-line {
+                position: absolute; top: 0; left: 0;
+                height: 2px; background: linear-gradient(90deg, rgba(75,144,255,0.9), rgba(75,144,255,0.3));
+                transform-origin: 0 50%;
+                pointer-events: none;
+            }
+            .splat-annotation {
+                position: absolute; width: 280px;
+                background: rgba(10, 14, 22, 0.96);
+                border: 1px solid rgba(75,144,255,0.6);
+                border-radius: 10px; padding: 14px 16px;
+                pointer-events: all; cursor: default;
+                display: none;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+                backdrop-filter: blur(10px);
+            }
+            .splat-marker.active .splat-annotation { display: block; }
+            .anno-title {
+                font-size: 0.9rem; font-weight: 700; color: #4B90FF;
+                margin-bottom: 8px; padding-right: 20px; line-height: 1.3;
+            }
+            .anno-details {
+                font-size: 0.78rem; color: #C8D8F0; line-height: 1.55;
+            }
+            .anno-warning {
+                margin-top: 8px; padding: 6px 8px;
+                background: rgba(255,75,75,0.12); border-left: 3px solid #FF4B4B;
+                border-radius: 0 4px 4px 0; font-size: 0.75rem; color: #FF8888;
+                font-weight: 600;
+            }
+            .splat-annotation .close-btn {
+                position: absolute; top: 8px; right: 10px;
+                background: none; border: none; color: #64748b;
+                cursor: pointer; font-size: 11px; pointer-events: all;
+                line-height: 1;
+            }
+            .splat-annotation .close-btn:hover { color: white; }
+
             /* --- WALKTHROUGH UI OVERLAY --- */
-            #tour-container { display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 450px; background: rgba(14, 17, 23, 0.95); color: #FAFAFA; padding: 20px; border-radius: 12px; border: 1px solid #4B90FF; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: 'Source Sans Pro', sans-serif; backdrop-filter: blur(8px); }
-            #tour-container .header { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(250,250,250,0.2); padding-bottom: 10px; margin-bottom: 15px; }
-            #tour-container h3 { margin: 0; color: #4B90FF; font-size: 1.25rem; font-weight: 600; }
-            #tour-container p { margin: 0 0 20px 0; font-size: 0.95rem; line-height: 1.5; color: #E0E0E0; }
-            #tour-container .btn-group { display: flex; justify-content: space-between; gap: 10px; }
-            .tour-btn { flex: 1; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; font-size: 14px; transition: opacity 0.2s; }
-            .tour-btn.prev { background-color: #334155; color: white; }
+            #tour-container { display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 500px; background: rgba(10, 14, 22, 0.97); color: #FAFAFA; padding: 20px 22px; border-radius: 14px; border: 1px solid #4B90FF; z-index: 1000; box-shadow: 0 12px 40px rgba(0,0,0,0.6); font-family: 'Source Sans Pro', sans-serif; backdrop-filter: blur(12px); }
+            #tour-container .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(250,250,250,0.12); padding-bottom: 12px; margin-bottom: 14px; gap: 10px; }
+            #tour-container h3 { margin: 0; color: #4B90FF; font-size: 1.1rem; font-weight: 700; line-height: 1.3; flex: 1; }
+            #tour-section-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; background: rgba(75,144,255,0.18); color: #6BAAFF; border: 1px solid rgba(75,144,255,0.3); white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+            #tour-container p { margin: 0 0 10px 0; font-size: 0.88rem; line-height: 1.6; color: #C8D8F0; }
+            #tour-highlight { margin-bottom: 12px; padding: 8px 11px; background: rgba(75,144,255,0.1); border-left: 3px solid #4B90FF; border-radius: 0 6px 6px 0; font-size: 0.8rem; color: #9BBFE8; line-height: 1.5; font-style: italic; }
+            #tour-warning-box { display: none; margin-bottom: 12px; padding: 8px 11px; background: rgba(255,75,75,0.1); border-left: 3px solid #FF4B4B; border-radius: 0 6px 6px 0; font-size: 0.8rem; color: #FF8888; font-weight: 600; line-height: 1.4; }
+            #tour-container .btn-group { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+            #tour-progress-bar { height: 3px; background: rgba(75,144,255,0.2); border-radius: 3px; margin-bottom: 14px; }
+            #tour-progress-fill { height: 100%; background: #4B90FF; border-radius: 3px; transition: width 0.4s ease; }
+            .tour-btn { flex: 1; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; font-size: 14px; transition: opacity 0.2s, background 0.2s; }
+            .tour-btn.prev { background-color: #1E2A3A; color: #94a3b8; }
+            .tour-btn.prev:not(:disabled):hover { background-color: #263548; color: white; }
             .tour-btn.next { background-color: #4B90FF; color: white; }
-            .tour-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-            .close-tour { position: absolute; top: -10px; right: -10px; background: #334155; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); }
+            .tour-btn.next:not(:disabled):hover { background-color: #6BAAFF; }
+            .tour-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+            #tour-counter { color: #475569; font-size: 0.8rem; white-space: nowrap; }
+            .close-tour { position: absolute; top: -10px; right: -10px; background: #1E293B; color: #94a3b8; border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 12px; }
 		</style>
 	</head>
 	<body>
@@ -186,12 +250,16 @@
             <button class="close-tour" id="closeTourBtn">✖</button>
             <div class="header">
                 <h3 id="tour-title">Tour Loading...</h3>
-                <span id="tour-counter" style="color: #94a3b8; font-size: 0.9rem;">1 / X</span>
+                <span id="tour-section-tag">Section</span>
             </div>
+            <div id="tour-progress-bar"><div id="tour-progress-fill" style="width:10%"></div></div>
             <p id="tour-description">Initializing spatial data...</p>
+            <div id="tour-highlight"></div>
+            <div id="tour-warning-box"></div>
             <div class="btn-group">
-                <button id="tour-prev" class="tour-btn prev">Previous</button>
-                <button id="tour-next" class="tour-btn next">Next Frame</button>
+                <button id="tour-prev" class="tour-btn prev">◀ Previous</button>
+                <span id="tour-counter">1 / X</span>
+                <button id="tour-next" class="tour-btn next">Next ▶</button>
             </div>
         </div>
 
