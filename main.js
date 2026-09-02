@@ -234,7 +234,7 @@ void main () {
 }`.trim();
 const fragmentShaderSource = `#version 300 es\nprecision highp float; in vec4 vColor; in vec2 vPosition; out vec4 fragColor;\nvoid main () { float A = -dot(vPosition, vPosition); if (A < -4.0) discard; float B = exp(A) * vColor.a; fragColor = vec4(B * vColor.rgb, B); }`.trim();
 
-let defaultViewMatrix = [0.73, 0.13, -0.67, 0, 0.1, 0.95, 0.29, 0, 0.67, -0.28, 0.68, 0, -0.02, 0.29, 2.22, 1];
+let defaultViewMatrix = [0.87,0.11,-0.47,0,0.03,0.96,0.29,0,0.48,-0.27,0.83,0,0.75,0.83,5.19,1];
 let viewMatrix = defaultViewMatrix;
 
 function posToMatrix(x, y, z) { return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, -x, -y, -z, 1]; }
@@ -328,7 +328,7 @@ async function main() {
                 <div class="anchor-point"></div>
                 <div class="splat-annotation">
                     <div class="close-btn">✖</div>
-                    ${annoData.image ? `<img class="anno-image" src="data:image/jpeg;base64,${annoData.image}" alt="">` : ''}
+                    ${annoData.image ? '<img class="anno-image" alt="">' : ''}
                     <div class="anno-body">
                         <div class="anno-title">${annoData.title}</div>
                         <div class="anno-details">${annoData.description}</div>
@@ -336,6 +336,9 @@ async function main() {
                     </div>
                 </div>
             `;
+            if (annoData.image) {
+                el.querySelector('.anno-image').src = 'data:image/jpeg;base64,' + annoData.image;
+            }
 
             let dot = el.querySelector('.anchor-point');
             let box = el.querySelector('.splat-annotation');
