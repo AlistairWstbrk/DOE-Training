@@ -243,7 +243,7 @@ const tourDatabase = {
     "EQUINOXREFINE_FINAL": [
         {
             title: "🔍 Vehicle Overview",
-            section: "Stop 1 of 3 — Full Exterior",
+            section: "Stop 1 of 4 — Full Exterior",
             description: "Full exterior view of the Chevrolet Equinox EV. This battery-electric vehicle operates on high-voltage DC power (400V+). Before any inspection, confirm the vehicle is in PARK, key fob removed, and 12V auxiliary battery disconnected. Orange-jacketed cables indicate HV circuits — never cut or touch them.",
             highlight: "⚠️ The vehicle can be SILENT and still fully energized. Always assume HV systems are live until formally isolated.",
             warning: null,
@@ -251,15 +251,23 @@ const tourDatabase = {
         },
         {
             title: "⚡ Front Bumper",
-            section: "Stop 2 of 3 — Front Fascia",
+            section: "Stop 2 of 4 — Front Fascia",
             description: "The front fascia is a critical area for first responders. The HV battery warning label is located under the center front compartment sight shield on the center of the air inlet grill panel. The 12V auxiliary battery is located in the engine bay — cutting the 12V cable disables both the airbag system and the HV contactors.\n\nHood release: pull the handle on the lower left side of the instrument panel.",
             highlight: "Orange HV cables visible in the engine bay are energized even with the vehicle OFF. Do NOT cut them.",
             warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
             matrix: [0.99,-0.02,-0.12,0,0.02,1,0.01,0,0.12,-0.01,0.99,0,0.49,1.09,4.1,1]
         },
         {
+            title: "🔧 Engine Bay",
+            section: "Stop 3 of 4 — Under the Hood",
+            description: "The engine bay of the Equinox EV houses the electric drive unit, power electronics, and the 12V auxiliary battery. The HV battery warning label is visible on the underside of the hood.\n\nKey hazards in this area:\n• Orange HV cables routed through the bay — never cut or modify\n• The 12V auxiliary battery (yellow tape marking) — double-cut both sides of tape to disable HV contactors\n• High-voltage inverter and onboard charger modules",
+            highlight: "The 12V cable marked with yellow tape is your primary disconnect. Double-cut both sides of the tape — wait 10 sec (airbags) then 60 sec (HV discharge) before touching HV components.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            matrix: [1,0,-0.08,0,0.03,0.93,0.37,0,0.08,-0.37,0.93,0,0.24,0.42,2.59,1]
+        },
+        {
             title: "🔌 Charging Port (CCS1)",
-            section: "Stop 3 of 3 — Charging System",
+            section: "Stop 4 of 4 — Charging System",
             description: "The Combined Charging System (CCS1) port is located on the driver-side rear quarter panel. It supports AC Level 1/2 and DC Fast Charge up to 150 kW.\n\nAt a crash scene: if the vehicle is connected to a charger, remove the charge handle from the vehicle FIRST before any other action. The common handle disconnects normally; the DC Fast Charge handle is larger and may require additional effort. The vehicle's anti-theft alarm may activate when the charge handle is removed.",
             highlight: "Remove the charge handle FIRST — before cutting any cables or beginning extrication.",
             warning: null,
