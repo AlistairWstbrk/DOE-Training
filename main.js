@@ -783,7 +783,7 @@ async function main() {
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32UI, shtexwidth, shtexheight, 0, gl.RGBA_INTEGER, gl.UNSIGNED_INT, shdata);
                 gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texture);
-                gl.uniform1i(u_has_sh, 1);
+                gl.uniform1i(u_has_sh, 0); // SH disabled — use DC color only
             } else { gl.uniform1i(u_has_sh, 0); }
         } else if (e.data.depthIndex) {
             gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer); gl.bufferData(gl.ARRAY_BUFFER, e.data.depthIndex, gl.DYNAMIC_DRAW); vertexCount = e.data.vertexCount;
