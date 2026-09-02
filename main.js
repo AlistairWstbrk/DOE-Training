@@ -755,7 +755,7 @@ async function main() {
 
     // ── Background gradient program ────────────────────────────────────────────
     const bgVS = `#version 300 es\nin vec2 a;\nout vec2 vP;\nvoid main(){vP=a;gl_Position=vec4(a,0.9999,1.);}`.trim();
-    const bgFS = `#version 300 es\nprecision highp float;\nin vec2 vP;out vec4 o;\nvoid main(){float t=vP.y*.5+.5;vec3 top=vec3(.07,.09,.14),bot=vec3(.16,.16,.18);o=vec4(mix(bot,top,smoothstep(0.,.7,t)),0.);}`.trim();
+    const bgFS = `#version 300 es\nprecision highp float;\nin vec2 vP;out vec4 o;\nvoid main(){o=vec4(0.,0.,0.,0.);}`.trim();
     const bgProg = gl.createProgram();
     { const v=gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(v,bgVS); gl.compileShader(v); const f=gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(f,bgFS); gl.compileShader(f); gl.attachShader(bgProg,v); gl.attachShader(bgProg,f); gl.linkProgram(bgProg); }
     const bgBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,1,1,-1,1]), gl.STATIC_DRAW);
