@@ -1,5 +1,5 @@
 let cameras = [
-    { id: 0, img_name: "00001", width: 1920, height: 1080, position: [-3.0089893469241797, -0.11086489695181866, -3.7527640949141428], rotation: [[0.876134201218856, 0.06925962026449776, 0.47706599800804744], [-0.04747421839895102, 0.9972110940209488, -0.057586739349882114], [-0.4797239414934443, 0.027805376500959853, 0.8769787916452908]], fy: 1080, fx: 1080 }
+    { id: 0, img_name: "00001", width: 1959, height: 1090, position: [-3.0089893469241797, -0.11086489695181866, -3.7527640949141428], rotation: [[0.876134201218856, 0.06925962026449776, 0.47706599800804744], [-0.04747421839895102, 0.9972110940209488, -0.057586739349882114], [-0.4797239414934443, 0.027805376500959853, 0.8769787916452908]], fy: 1164.6601287484507, fx: 1159.5880733038064 }
 ];
 let camera = cameras[0];
 
@@ -762,10 +762,8 @@ async function main() {
     const bg_a = gl.getAttribLocation(bgProg, "a");
 
     const resize = () => {
-        const fxScaled = camera.fx * innerWidth / camera.width;
-        const fyScaled = camera.fy * innerHeight / camera.height;
-        gl.uniform2fv(u_focal, new Float32Array([fxScaled, fyScaled]));
-        projectionMatrix = getProjectionMatrix(fxScaled, fyScaled, innerWidth, innerHeight);
+        gl.uniform2fv(u_focal, new Float32Array([camera.fx, camera.fy]));
+        projectionMatrix = getProjectionMatrix(camera.fx, camera.fy, innerWidth, innerHeight);
         gl.uniform2fv(u_viewport, new Float32Array([innerWidth, innerHeight]));
         gl.canvas.width = Math.round(innerWidth / downsample); gl.canvas.height = Math.round(innerHeight / downsample); gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.uniformMatrix4fv(u_projection, false, projectionMatrix);
