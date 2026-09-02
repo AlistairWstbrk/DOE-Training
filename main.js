@@ -247,7 +247,7 @@ const tourDatabase = {
             description: "Full exterior view of the Chevrolet Equinox EV. This battery-electric vehicle operates on high-voltage DC power (400V+). Before any inspection, confirm the vehicle is in PARK, key fob removed, and 12V auxiliary battery disconnected. Orange-jacketed cables indicate HV circuits — never cut or touch them.",
             highlight: "⚠️ The vehicle can be SILENT and still fully energized. Always assume HV systems are live until formally isolated.",
             warning: null,
-            matrix: [0.92,0.05,-0.38,0,0,0.99,0.12,0,0.38,-0.11,0.91,0,-0.06,0.75,1.08,1]
+            matrix: [0.87,0.11,-0.47,0,0.03,0.96,0.29,0,0.48,-0.27,0.83,0,0.75,0.83,5.19,1]
         },
         {
             title: "⚡ Front Bumper",
@@ -255,7 +255,7 @@ const tourDatabase = {
             description: "The front fascia is a critical area for first responders. The HV battery warning label is located under the center front compartment sight shield on the center of the air inlet grill panel. The 12V auxiliary battery is located in the engine bay — cutting the 12V cable disables both the airbag system and the HV contactors.\n\nHood release: pull the handle on the lower left side of the instrument panel.",
             highlight: "Orange HV cables visible in the engine bay are energized even with the vehicle OFF. Do NOT cut them.",
             warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            matrix: [0.99,-0.04,-0.11,0,0.04,1,0.02,0,0.11,-0.03,0.99,0,0.51,1.06,4.1,1]
+            matrix: [0.99,-0.02,-0.12,0,0.02,1,0.01,0,0.12,-0.01,0.99,0,0.49,1.09,4.1,1]
         },
         {
             title: "🔌 Charging Port (CCS1)",
@@ -263,7 +263,7 @@ const tourDatabase = {
             description: "The Combined Charging System (CCS1) port is located on the driver-side rear quarter panel. It supports AC Level 1/2 and DC Fast Charge up to 150 kW.\n\nAt a crash scene: if the vehicle is connected to a charger, remove the charge handle from the vehicle FIRST before any other action. The common handle disconnects normally; the DC Fast Charge handle is larger and may require additional effort. The vehicle's anti-theft alarm may activate when the charge handle is removed.",
             highlight: "Remove the charge handle FIRST — before cutting any cables or beginning extrication.",
             warning: null,
-            matrix: [0.99,-0.04,-0.11,0,0.04,1,0.02,0,0.11,-0.03,0.99,0,0.51,1.06,4.1,1]
+            matrix: [0.62,0.02,-0.79,0,0.08,0.99,0.09,0,0.78,-0.11,0.61,0,0.63,1.03,3.17,1]
         }
     ]
 };
@@ -289,7 +289,7 @@ async function main() {
     const vehicleAnnotations = [
         {
             id: "RF_BatteryWarningLabel",
-            position: [0.43, -0.87, -0.88],
+            position: [0.43, -0.96, -0.86],
             title: "🟡 HV Battery Warning Label",
             description: "This label marks the location of the high voltage battery system. The HV battery is a Class B Li-Ion pack mounted under the vehicle as a structural floor component.\n\nThe HV system operates at 400V+ and may remain energized even when the vehicle is OFF, in PARK, or appears otherwise inactive.\n\nDo not touch, cut, or modify any orange high voltage cables or components. Do not lift the vehicle from any HV battery location — the pack is structural and damage can create a serious hazard.",
             warning: "HV system may be energized even with vehicle OFF. Do NOT cut orange cables.",
@@ -297,7 +297,7 @@ async function main() {
         },
         {
             id: "RF_12V",
-            position: [0.24, -0.71, -0.98],
+            position: [0.17, -0.93, -0.97],
             title: "🔋 12V Auxiliary Battery",
             description: "The 12V lead-acid auxiliary battery powers conventional vehicle systems and — critically — controls the HV contactors that connect the high voltage battery to the drivetrain.\n\nEmergency procedure:\n1. Double-cut the LV cable on BOTH sides of the yellow tape\n2. Remove the cut section entirely (no loose ends)\n3. Wait 10 seconds — airbag capacitor discharge\n4. Wait 60 seconds — HV system capacitor discharge\n\nThis single cut simultaneously disables the airbag system AND the HV contactors.",
             warning: "NEVER cut the 12V cable during an active 'Battery Danger Detected' thermal runaway event — unless occupant extrication requires airbag disablement.",
@@ -305,7 +305,7 @@ async function main() {
         },
         {
             id: "RF_ChargePort",
-            position: [0.709, -0.758, -0.685],
+            position: [0.76, -0.82, -0.64],
             title: "🔌 Charging Port (CCS1)",
             description: "The Combined Charging System (CCS1) port is located on the driver-side rear quarter panel. It supports AC Level 1 (120V), Level 2 (240V), and DC Fast Charge up to 150 kW.\n\nAt a crash scene: if the vehicle is connected to a charger, remove the charge handle from the vehicle FIRST before any other action.\n\nThe common J1772 handle disconnects normally. The DC Fast Charge handle is larger and may require additional effort to disconnect. The port locks automatically while charging — never force it.",
             warning: "Disconnecting the charge handle may trigger the vehicle's anti-theft alarm.",
