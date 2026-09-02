@@ -575,45 +575,21 @@ async function main() {
             warning: "Disconnecting may trigger the vehicle's anti-theft alarm.",
             targetUrlSnippet: "Equinox EV (Hood Closed)"
         },
-        // --- EQUINOXREFINE_FINAL annotations (refined scan, coordinate space X[-0.72,0.66] Y[-1.30,-0.18] Z[-1.50,1.94]) ---
+        // --- EQUINOXREFINE_FINAL annotations ---
+        {
+            id: "RF_BatteryWarningLabel",
+            position: [0.78, -1.13, -2.74],
+            title: "🟡 HV Battery Warning Label",
+            description: "This label marks the location of the high voltage battery system. The HV battery is a Class B Li-Ion pack mounted under the vehicle as a structural floor component.\n\nThe HV system operates at 400V+ and may remain energized even when the vehicle is OFF, in PARK, or appears otherwise inactive.\n\nDo not touch, cut, or modify any orange high voltage cables or components. Do not lift the vehicle from any HV battery location — the pack is structural and damage can create a serious hazard.",
+            warning: "HV system may be energized even with vehicle OFF. Do NOT cut orange cables.",
+            targetUrlSnippet: "EQUINOXREFINE_FINAL"
+        },
         {
             id: "RF_12V",
-            position: [0.42, -0.55, -0.95],
+            position: [0.07, -1.38, -2.41],
             title: "🔋 12V Auxiliary Battery",
-            description: "Lead-acid 12V battery powering conventional systems and — critically — the HV contactors. Double-cut the LV cable on BOTH sides of the yellow tape and remove the cut section.\n\nWait 10 sec (airbag reserve), then 60 sec (HV discharge).",
-            warning: "NEVER cut 12V during active thermal runaway mitigation.",
-            targetUrlSnippet: "EQUINOXREFINE_FINAL"
-        },
-        {
-            id: "RF_DriveUnit",
-            position: [0.0, -0.42, -0.70],
-            title: "⚡ Drive Unit (Motor + Inverter)",
-            description: "The electric drive unit occupies most of the engine bay. Contains the 3-phase AC motor and inverter module. Orange HV cables connect to the HV battery pack beneath the vehicle floor.",
-            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
-            targetUrlSnippet: "EQUINOXREFINE_FINAL"
-        },
-        {
-            id: "RF_HVBattery",
-            position: [0.0, -1.20, 0.30],
-            title: "🟡 HV Battery Pack",
-            description: "Class B Li-Ion high voltage battery mounted under the vehicle as a structural floor component. The HV system may remain energized even when the vehicle is OFF.\n\nDo NOT lift the vehicle from any location on the HV battery.",
-            warning: "HV battery is structural — improper lifting or cutting can cause hazard.",
-            targetUrlSnippet: "EQUINOXREFINE_FINAL"
-        },
-        {
-            id: "RF_ChargePort",
-            position: [-0.55, -0.60, 0.85],
-            title: "🔌 Charge Port",
-            description: "If the vehicle is connected to a charge station: remove the charge handle from the vehicle first. Consider terminating power at the charging station.\n\nCommon handle disconnects normally. DC Fast Charge handle may require additional effort.",
-            warning: "Disconnecting may trigger the vehicle's anti-theft alarm.",
-            targetUrlSnippet: "EQUINOXREFINE_FINAL"
-        },
-        {
-            id: "RF_Airbags",
-            position: [0.0, -0.50, 1.60],
-            title: "��� 8 Airbag Locations",
-            description: "The Equinox EV has 8 airbags:\n• Driver — steering wheel\n• Front Passenger — instrument panel\n• 2× Front Knee Bolster\n• 2× Front Seat Outboard\n• 2× Roof Rail\n\nAfter LV cut: wait 10 seconds before working near deployment zones.",
-            warning: null,
+            description: "The 12V lead-acid auxiliary battery powers conventional vehicle systems and — critically — controls the HV contactors that connect the high voltage battery to the drivetrain.\n\nEmergency procedure:\n1. Double-cut the LV cable on BOTH sides of the yellow tape\n2. Remove the cut section entirely (no loose ends)\n3. Wait 10 seconds — airbag capacitor discharge\n4. Wait 60 seconds — HV system capacitor discharge\n\nThis single cut simultaneously disables the airbag system AND the HV contactors.",
+            warning: "NEVER cut the 12V cable during an active 'Battery Danger Detected' thermal runaway event — unless occupant extrication requires airbag disablement.",
             targetUrlSnippet: "EQUINOXREFINE_FINAL"
         },
         // --- Engine Bay Merged Scan Annotations ---
