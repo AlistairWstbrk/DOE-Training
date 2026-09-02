@@ -1,5 +1,5 @@
 let cameras = [
-    { id: 0, img_name: "00001", width: 1959, height: 1090, position: [-3.0089893469241797, -0.11086489695181866, -3.7527640949141428], rotation: [[0.876134201218856, 0.06925962026449776, 0.47706599800804744], [-0.04747421839895102, 0.9972110940209488, -0.057586739349882114], [-0.4797239414934443, 0.027805376500959853, 0.8769787916452908]], fy: 1164.6601287484507, fx: 1159.5880733038064 }
+    { id: 0, img_name: "00001", width: 1920, height: 1080, position: [-3.0089893469241797, -0.11086489695181866, -3.7527640949141428], rotation: [[0.876134201218856, 0.06925962026449776, 0.47706599800804744], [-0.04747421839895102, 0.9972110940209488, -0.057586739349882114], [-0.4797239414934443, 0.027805376500959853, 0.8769787916452908]], fy: 1080, fx: 1080 }
 ];
 let camera = cameras[0];
 
@@ -997,15 +997,9 @@ async function main() {
 
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        // 1. Background gradient (fills cleared areas, no depth)
-        gl.useProgram(bgProg);
-        gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); gl.enableVertexAttribArray(bg_a); gl.vertexAttribPointer(bg_a, 2, gl.FLOAT, false, 0, 0);
-        gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE);
-        gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
-
         if (vertexCount > 0) {
             document.getElementById("spinner").style.display = "none";
-            // 2. Gaussian splats
+            // 1. Gaussian splats (composites on black)
             gl.useProgram(program);
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer); gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
             gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer); gl.vertexAttribIPointer(a_index, 1, gl.INT, false, 0, 0);
@@ -1016,6 +1010,12 @@ async function main() {
         } else {
             document.getElementById("spinner").style.display = ""; start = Date.now() + 2000;
         }
+
+        // 2. Background gradient — drawn last so it only fills transparent/sparse areas
+        gl.useProgram(bgProg);
+        gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf); gl.enableVertexAttribArray(bg_a); gl.vertexAttribPointer(bg_a, 2, gl.FLOAT, false, 0, 0);
+        gl.blendFunc(gl.ONE_MINUS_DST_ALPHA, gl.ONE);
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
         
         const progress = (100 * vertexCount) / (splatData.length / rowLength);
         if (progress < 100) document.getElementById("progress").style.width = progress + "%";
