@@ -180,7 +180,12 @@
     "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Refined%20vehicle%20scans/BLAZERPPVREFINED.ply"
   },
   {
-    "name": "Equinox",
+    "name": "Equinox EV (Refined — Final)",
+    "category": "Example",
+    "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Refined%20vehicle%20scans/EQUINOXREFINE_FINAL.ply"
+  },
+  {
+    "name": "Equinox (Legacy)",
     "category": "Example",
     "url": "https://huggingface.co/datasets/AlistairWstbrk/splats/resolve/main/Refined%20vehicle%20scans/EQUINOXREFINE.ply"
   },

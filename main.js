@@ -226,6 +226,72 @@ const tourDatabase = {
             matrix: defaultViewMatrix
         }
     ],
+    "EQUINOXREFINE_FINAL": [
+        {
+            title: "🔍 Vehicle Overview",
+            section: "Stop 1 of 8 — Full Exterior",
+            description: "Full exterior view of the Chevrolet Equinox EV. This battery-electric vehicle operates on high-voltage DC power (400V+). Before any inspection, confirm the vehicle is in PARK, key fob removed, and 12V auxiliary battery disconnected. Orange-jacketed cables indicate HV circuits — never cut or touch them.",
+            highlight: "⚠️ The vehicle can be SILENT and still fully energized. Always assume HV systems are live until formally isolated.",
+            warning: null,
+            matrix: [-0.936, -0.091, -0.339, 0, 0.0, 0.966, -0.259, 0, 0.351, -0.243, -0.904, 0, -0.105, 0.765, 3.624, 1]
+        },
+        {
+            title: "⚡ Front Bumper & Radar Sensor",
+            section: "Stop 2 of 8 — Front Fascia",
+            description: "The front fascia houses the forward-facing millimeter-wave radar (center grille) and front-facing camera behind the windshield. Both feed the Super Cruise ADAS system. Do not apply paint, adhesives, or decals to these zones — even minor obstructions degrade sensor accuracy and may require dealer recalibration.",
+            highlight: "Stone chips or fascia deformation in the radar zone require a full ADAS recalibration before the vehicle is returned to service.",
+            warning: null,
+            matrix: [-1.0, -0.004, -0.016, 0, 0.0, 0.973, -0.23, 0, 0.016, -0.23, -0.973, 0, -0.061, 1.167, 3.628, 1]
+        },
+        {
+            title: "🚗 Driver Side — Diagnostic & HV Routing",
+            section: "Stop 3 of 8 — Driver Side",
+            description: "The OBD-II diagnostic port is located beneath the driver-side instrument panel. The driver door sill carries the VIN label and tire pressure specs. Inspect door seal integrity — water ingress into the HV battery tray triggers a safety fault. The orange HV cable conduit runs along the rocker panel floor.",
+            highlight: "Door seal failure is a safety-critical fault — report any ingress immediately.",
+            warning: "DO NOT CUT ANY ORANGE COLORED HIGH VOLTAGE CABLES.",
+            matrix: [0.0, 0.225, 0.974, 0, 0.0, 0.974, -0.225, 0, -1.0, 0.0, 0.0, 0, 0.22, 0.728, 2.706, 1]
+        },
+        {
+            title: "🔌 DC Fast Charging Port (CCS1)",
+            section: "Stop 4 of 8 — Charging System",
+            description: "The Combined Charging System (CCS1) port is in the driver-side rear quarter panel. It supports AC Level 1/2 (via J1772 adapter) and DC Fast Charge up to 150 kW. Inspect the charge door actuator, port pins for corrosion or bend damage, and the proximity/pilot contacts. The port locks automatically when charging — never force it open.",
+            highlight: "If the vehicle is connected to a charger at a crash scene — remove the charge handle FIRST before any other action.",
+            warning: null,
+            matrix: [-0.254, 0.345, 0.903, 0, 0.0, 0.934, -0.357, 0, -0.967, -0.091, -0.238, 0, -0.926, 0.648, 2.259, 1]
+        },
+        {
+            title: "🔴 Rear End — HV Labels & Battery Pan",
+            section: "Stop 5 of 8 — Rear",
+            description: "Rear lamps use full LED arrays. The liftgate backup camera feeds the Surround Vision system. High-voltage warning stickers on the rear valance are required by FMVSS. The rear underbody panel seals the Ultium battery pack — any crash deformation here warrants a battery inspection before driving.",
+            highlight: "Check HV warning labels are intact and legible. Missing or damaged labels must be replaced before releasing the vehicle.",
+            warning: null,
+            matrix: [1.0, -0.003, -0.013, 0, -0.0, 0.963, -0.268, 0, 0.013, 0.268, 0.963, 0, 0.05, 1.115, 3.634, 1]
+        },
+        {
+            title: "🔋 Passenger Side — Ultium Pack Venting",
+            section: "Stop 6 of 8 — Passenger Side",
+            description: "The Ultium HV battery pack vent path runs along the passenger-side rocker panel. Inspect for body damage that may compromise the side-curtain airbag deployment channel in the B-pillar. The side-facing Surround Vision camera is housed in the passenger mirror cap.",
+            highlight: "Rocker panel damage directly above the battery vent path must be assessed before returning to service.",
+            warning: null,
+            matrix: [0.0, -0.221, -0.975, 0, -0.0, 0.975, -0.221, 0, 1.0, 0.0, 0.0, 0, -0.22, 0.715, 2.709, 1]
+        },
+        {
+            title: "📡 Roof — Cameras & GNSS Antenna",
+            section: "Stop 7 of 8 — Roof",
+            description: "The forward camera module sits at the top of the windshield (black housing). It provides lane-centering, auto-emergency braking, and Super Cruise LiDAR map matching. The roof antenna array handles GNSS, cellular, and V2X (Vehicle-to-Everything) communications. Any roof replacement requires full ADAS recalibration.",
+            highlight: "Roof damage or panel replacement always triggers a mandatory ADAS recalibration before the vehicle can be operated in Super Cruise mode.",
+            warning: null,
+            matrix: [-1.0, -0.012, -0.012, 0, 0.0, 0.727, -0.686, 0, 0.017, -0.686, -0.727, 0, -0.034, 0.282, 2.484, 1]
+        },
+        {
+            title: "🔧 ADAS Cluster — Front Left",
+            section: "Stop 8 of 8 — Sensor Calibration",
+            description: "The front-left corner hosts a 360° ultrasonic parking sensor and the left forward-looking camera (Blind Zone Alert / Lane Change Alert). Per SAE J3212, all sensors in this zone require static calibration to certified targets before vehicle release after any front-left body repair. Recheck alignment any time a front-left panel is replaced.",
+            highlight: "Release checklist: radar calibrated ✓ | front camera calibrated ✓ | ultrasonic sensors functional ✓ | road-test lane-keeping verified ✓",
+            warning: null,
+            matrix: [-0.954, 0.061, 0.292, 0, 0.0, 0.979, -0.204, 0, -0.298, -0.195, -0.934, 0, 0.28, 0.927, 3.463, 1]
+        }
+    ],
     "Equinox": [
         {
             title: "🔍 EV Identification & PPE",
