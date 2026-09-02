@@ -537,14 +537,14 @@
 			const devOutputBox = document.getElementById("devOutputBox");
 			const copyDevBtn = document.getElementById("copyDevBtn");
 
-			let isDevMode = false;
+			var isDevMode = false;
 			let pinDropped = false;
 			let pinCamPos = [0,0,0];
 			let pinForwardVec = [0,0,0];
 			let calculatedTarget = [0,0,0];
 
 			devModeToggle.addEventListener("change", (e) => {
-				isDevMode = e.target.checked;
+				window.isDevMode = isDevMode = e.target.checked;
 				devModeControls.style.display = isDevMode ? "block" : "none";
 				devCrosshair.style.display = isDevMode ? "block" : "none";
 				if (!isDevMode) {

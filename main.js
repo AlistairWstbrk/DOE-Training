@@ -346,7 +346,7 @@ async function main() {
 
             let isDragging = false;
             let startMouseX = 0, startMouseY = 0;
-            const defaultOffsetX = 60; const defaultOffsetY = -90;
+            const defaultOffsetX = 18; const defaultOffsetY = -270;
             let offsetX = defaultOffsetX; let offsetY = defaultOffsetY;
 
             dot.onclick = (e) => {
@@ -444,21 +444,52 @@ async function main() {
         }
     };
 
-    let activeKeys = [];
+    let activeKeys = []; let currentCameraIndex = 0;
     window.addEventListener("keyup", (e) => { activeKeys = activeKeys.filter((k) => k !== e.code); });
     window.addEventListener("blur", () => { activeKeys = []; });
 
-    window.addEventListener("wheel", (e) => { e.preventDefault(); }, { passive: false });
+    window.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        if (!isDevMode || isTourActive) return;
+        carousel = false;
+        const scale = e.deltaMode == 1 ? 10 : e.deltaMode == 2 ? innerHeight : 1;
+        let inv = invert4(viewMatrix);
+        if (e.shiftKey) { inv = translate4(inv, (e.deltaX * scale) / innerWidth, (e.deltaY * scale) / innerHeight, 0); }
+        else if (e.ctrlKey || e.metaKey) { inv = translate4(inv, 0, 0, (-10 * (e.deltaY * scale)) / innerHeight); }
+        else { let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, -(e.deltaX * scale) / innerWidth, 0, 1, 0); inv = rotate4(inv, (e.deltaY * scale) / innerHeight, 1, 0, 0); inv = translate4(inv, 0, 0, -d); }
+        viewMatrix = invert4(inv);
+    }, { passive: false });
 
     let startX, startY, down;
-    canvas.addEventListener("mousedown", (e) => { e.preventDefault(); });
-    canvas.addEventListener("mousemove", (e) => { e.preventDefault(); });
-    canvas.addEventListener("mouseup", (e) => { e.preventDefault(); });
+    canvas.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        if (!isDevMode || isTourActive) return;
+        carousel = false; startX = e.clientX; startY = e.clientY;
+        down = e.ctrlKey || e.metaKey ? 2 : 1;
+    });
+    canvas.addEventListener("mousemove", (e) => {
+        e.preventDefault();
+        if (!isDevMode || isTourActive || !down) return;
+        if (down == 1) { let inv = invert4(viewMatrix); let dx = (5 * (e.clientX - startX)) / innerWidth; let dy = (5 * (e.clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(inv); startX = e.clientX; startY = e.clientY; }
+        else if (down == 2) { let inv = invert4(viewMatrix); inv = translate4(inv, (-10 * (e.clientX - startX)) / innerWidth, 0, (10 * (e.clientY - startY)) / innerHeight); viewMatrix = invert4(inv); startX = e.clientX; startY = e.clientY; }
+    });
+    canvas.addEventListener("mouseup", (e) => { e.preventDefault(); down = false; startX = 0; startY = 0; });
 
     let altX = 0, altY = 0;
-    canvas.addEventListener("touchstart", (e) => { e.preventDefault(); }, { passive: false });
-    canvas.addEventListener("touchmove", (e) => { e.preventDefault(); }, { passive: false });
-    canvas.addEventListener("touchend", (e) => { e.preventDefault(); }, { passive: false });
+    canvas.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        if (!isDevMode || isTourActive) return;
+        carousel = false;
+        if (e.touches.length === 1) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; down = 1; }
+        else if (e.touches.length === 2) { startX = e.touches[0].clientX; altX = e.touches[1].clientX; startY = e.touches[0].clientY; altY = e.touches[1].clientY; down = 1; }
+    }, { passive: false });
+    canvas.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        if (!isDevMode || isTourActive) return;
+        if (e.touches.length === 1 && down) { let inv = invert4(viewMatrix); let dx = (4 * (e.touches[0].clientX - startX)) / innerWidth; let dy = (4 * (e.touches[0].clientY - startY)) / innerHeight; let d = 4; inv = translate4(inv, 0, 0, d); inv = rotate4(inv, dx, 0, 1, 0); inv = rotate4(inv, -dy, 1, 0, 0); inv = translate4(inv, 0, 0, -d); viewMatrix = invert4(inv); startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
+        else if (e.touches.length === 2) { const dtheta = Math.atan2(startY - altY, startX - altX) - Math.atan2(e.touches[0].clientY - e.touches[1].clientY, e.touches[0].clientX - e.touches[1].clientX); const dscale = Math.hypot(startX - altX, startY - altY) / Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); const dx = (e.touches[0].clientX + e.touches[1].clientX - (startX + altX)) / 2; const dy = (e.touches[0].clientY + e.touches[1].clientY - (startY + altY)) / 2; let inv = invert4(viewMatrix); inv = rotate4(inv, dtheta, 0, 0, 1); inv = translate4(inv, -dx / innerWidth, -dy / innerHeight, 0); inv = translate4(inv, 0, 0, 3 * (1 - dscale)); viewMatrix = invert4(inv); startX = e.touches[0].clientX; altX = e.touches[1].clientX; startY = e.touches[0].clientY; altY = e.touches[1].clientY; }
+    }, { passive: false });
+    canvas.addEventListener("touchend", (e) => { e.preventDefault(); down = false; startX = 0; startY = 0; }, { passive: false });
 
     window.addEventListener("gamepadconnected", (e) => { console.log(`Gamepad connected at index ${e.gamepad.index}: ${e.gamepad.id}.`); });
     let leftGamepadTrigger, rightGamepadTrigger;
